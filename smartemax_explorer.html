@@ -440,10 +440,12 @@ function renderScorecards(rows) {
     el.textContent = a !== null ? a.toFixed(1) : '—';
   });
 
-  const adh = rows.filter(r => r.validForAdherence === 'SI' || r.validForAdherence === true).length;
-  const total = rows.length;
-  document.getElementById('sc-adherence').textContent = total ? Math.round(adh / total * 100) + '%' : '—';
-  document.getElementById('sc-records').textContent = total;
+  const scheduledRows = rows.filter(r => r.entryType === 'scheduled');
+  const days = new Set(scheduledRows.map(r => r.dayKey ? r.dayKey.substring(0, 10) : null).filter(Boolean));
+  const totalExpected = days.size * 3;
+  const adh = scheduledRows.filter(r => r.validForAdherence === 'SI' || r.validForAdherence === true).length;
+  document.getElementById('sc-adherence').textContent = totalExpected ? Math.round(adh / totalExpected * 100) + '%' : '—';
+  document.getElementById('sc-records').textContent = rows.length;
 
   const idAvg = avg(rows.map(r => r.ideation));
   const sc = document.querySelector('#scorecards .scorecard');
@@ -503,22 +505,22 @@ function renderMainChart(rows) {
 
 function renderAdherence(rows) {
   const byDay = {};
-  rows.forEach(r => {
+  rows.filter(r => r.entryType === 'scheduled').forEach(r => {
     const day = r.dayKey ? r.dayKey.substring(0, 10) : 'sin fecha';
-    if (!byDay[day]) byDay[day] = { total: 0, completed: 0 };
-    byDay[day].total++;
+    if (!byDay[day]) byDay[day] = { completed: 0 };
     if (r.validForAdherence === 'SI' || r.validForAdherence === true) byDay[day].completed++;
   });
 
-  const days = Object.keys(byDay).sort().slice(-14);
+  const days2 = Object.keys(byDay).sort().slice(-14);
   const container = document.getElementById('adherence-bars');
   container.innerHTML = '';
 
-  if (!days.length) { container.innerHTML = '<div class="loading">Sin datos</div>'; return; }
+  if (!days2.length) { container.innerHTML = '<div class="loading">Sin datos</div>'; return; }
 
-  days.forEach(day => {
-    const { total, completed } = byDay[day];
-    const pct = total ? Math.round(completed / total * 100) : 0;
+  days2.forEach(day => {
+    const { completed } = byDay[day];
+    const total = 3;
+    const pct = Math.round(completed / total * 100);
     const color = pct === 100 ? '#388e3c' : pct > 50 ? '#f57c00' : '#e53935';
     const row = document.createElement('div');
     row.className = 'adherence-row';
@@ -529,7 +531,7 @@ function renderAdherence(rows) {
           <span>${pct > 20 ? pct + '%' : ''}</span>
         </div>
       </div>
-      <span class="adherence-val">${completed}/${total}</span>
+      <span class="adherence-val">${completed}/3</span>
     `;
     container.appendChild(row);
   });
