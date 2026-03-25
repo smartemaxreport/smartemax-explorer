@@ -428,7 +428,7 @@ function renderAll() {
 }
 
 function avg(arr) {
-  const nums = arr.map(Number).filter(n => !isNaN(n) && n !== null && n !== '');
+  const nums = arr.filter(v => v !== '' && v !== null && v !== undefined).map(Number).filter(n => !isNaN(n));
   return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
 }
 
