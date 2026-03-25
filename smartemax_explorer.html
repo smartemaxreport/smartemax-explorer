@@ -378,7 +378,7 @@ function initTokenClient() {
       loadData();
     },
   });
-  tokenClient.requestAccessToken({ prompt: 'none' });
+  tokenClient.requestAccessToken({ prompt: '' });
 }
 
 function refreshTokenAndRetry() {
@@ -387,7 +387,8 @@ function refreshTokenAndRetry() {
     document.getElementById('app').style.display = 'none';
     return;
   }
-  tokenClient.requestAccessToken({ prompt: 'none' });
+  // Token caducado - renovar sin pantalla de login
+  tokenClient.requestAccessToken({ prompt: '' });
 }
 
 function logout() {
@@ -411,7 +412,7 @@ async function loadData() {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
     if (res.status === 401 || res.status === 403) {
-      refreshTokenAndRetry();
+      showReconnectBanner();
       return;
     }
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -748,6 +749,22 @@ function renderDetailPage() {
     html += `<button class="page-btn ${i === detailPage ? 'active' : ''}" onclick="detailPage=${i}; renderDetailPage();">${i+1}</button>`;
   }
   pag.innerHTML = html;
+}
+
+function showReconnectBanner() {
+  const el = document.getElementById('error-banner');
+  el.innerHTML = 'Sesión caducada. <button onclick="reconnect()" style="margin-left:8px; padding:4px 12px; background:#c62828; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px;">Reconectar</button>';
+  el.style.display = 'block';
+  document.getElementById('info-banner').style.display = 'none';
+}
+
+function reconnect() {
+  if (tokenClient) {
+    tokenClient.requestAccessToken({ prompt: '' });
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
 }
 
 function showError(msg) {
