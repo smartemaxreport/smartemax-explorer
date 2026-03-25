@@ -346,6 +346,7 @@ const COLORS = {
 };
 
 let accessToken = null;
+let tokenClient = null;
 let allRows = [];
 let mainChart = null;
 let activeVars = new Set(['ideation', 'stress']);
@@ -354,7 +355,7 @@ let activeVars = new Set(['ideation', 'stress']);
 function handleCredential(response) {
   const payload = parseJwt(response.credential);
   document.getElementById('user-email').textContent = payload.email;
-  requestAccessToken();
+  initTokenClient();
 }
 
 function parseJwt(token) {
@@ -362,8 +363,8 @@ function parseJwt(token) {
   return JSON.parse(atob(base64));
 }
 
-function requestAccessToken() {
-  const client = google.accounts.oauth2.initTokenClient({
+function initTokenClient() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
     callback: (tokenResponse) => {
@@ -377,11 +378,21 @@ function requestAccessToken() {
       loadData();
     },
   });
-  client.requestAccessToken();
+  tokenClient.requestAccessToken({ prompt: 'none' });
+}
+
+function refreshTokenAndRetry() {
+  if (!tokenClient) {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    return;
+  }
+  tokenClient.requestAccessToken({ prompt: 'none' });
 }
 
 function logout() {
   accessToken = null;
+  tokenClient = null;
   allRows = [];
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
@@ -399,6 +410,10 @@ async function loadData() {
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
+    if (res.status === 401 || res.status === 403) {
+      refreshTokenAndRetry();
+      return;
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     const data = await res.json();
     const [headers, ...rows] = data.values || [];
