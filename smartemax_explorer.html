@@ -121,6 +121,24 @@
     .badge.bajo { background: #e8f5e9; color: #2e7d32; }
 
     .loading { text-align: center; padding: 40px; color: #888; font-size: 14px; }
+    .detail-th { text-align:left; padding:8px 10px; font-size:11px; color:#888; text-transform:uppercase; border-bottom:1.5px solid #e8e8e8; white-space:nowrap; }
+    .detail-td { padding:9px 10px; border-bottom:0.5px solid #f0f0f0; vertical-align:top; }
+    .detail-tr:hover td { background:#fafafa; }
+    .slot-badge { font-size:10px; padding:2px 7px; border-radius:8px; font-weight:500; }
+    .slot-morning { background:#fff8e1; color:#e65100; }
+    .slot-afternoon { background:#e3f2fd; color:#1565c0; }
+    .slot-night { background:#f3e5f5; color:#6a1b9a; }
+    .slot-extra { background:#e8f5e9; color:#2e7d32; }
+    .ia-card { background:#f8f9fa; border-radius:8px; padding:10px 12px; margin-bottom:6px; font-size:12px; }
+    .ia-label { font-size:10px; font-weight:600; color:#888; text-transform:uppercase; margin-bottom:3px; }
+    .ia-value { color:#1a1a1a; line-height:1.5; }
+    .page-btn { padding:5px 10px; border:1px solid #ddd; border-radius:6px; background:white; cursor:pointer; font-size:12px; }
+    .page-btn.active { background:#2e7d32; color:white; border-color:#2e7d32; }
+    .page-btn:hover:not(.active) { background:#f5f5f5; }
+    .num-cell { font-size:14px; font-weight:500; }
+    .num-high { color:#c62828; }
+    .num-mid { color:#e65100; }
+    .num-ok { color:#2e7d32; }
     .error-msg { background: #ffebee; color: #c62828; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
     .info-msg { background: #e8f5e9; color: #2e7d32; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
   </style>
@@ -281,6 +299,32 @@
         </table>
       </div>
     </div>
+
+    <!-- TABLA DETALLADA -->
+    <div class="chart-section" style="margin-top:20px;">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Registros detallados</div>
+          <div class="chart-sub">Todos los registros del paciente seleccionado · ordenados por fecha</div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <label style="font-size:12px; color:#888;">Mostrar:</label>
+          <select id="detail-view" onchange="renderDetailTable(getFilteredRows())" style="min-width:120px; font-size:13px; padding:6px 10px;">
+            <option value="scores">Puntuaciones</option>
+            <option value="ia">Análisis IA</option>
+          </select>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table id="detail-table" style="width:100%; border-collapse:collapse; font-size:13px;">
+          <thead id="detail-thead"></thead>
+          <tbody id="detail-tbody">
+            <tr><td colspan="10" class="loading">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="detail-pagination" style="display:flex; justify-content:center; gap:8px; margin-top:16px; font-size:13px;"></div>
+    </div>
   </main>
 </div>
 
@@ -425,6 +469,7 @@ function renderAll() {
   renderMainChart(rows);
   renderAdherence(rows);
   renderAlerts();
+  renderDetailTable(rows);
 }
 
 function avg(arr) {
@@ -441,10 +486,22 @@ function renderScorecards(rows) {
   });
 
   const scheduledRows = rows.filter(r => r.entryType === 'scheduled');
-  const days = new Set(scheduledRows.map(r => r.dayKey ? r.dayKey.substring(0, 10) : null).filter(Boolean));
-  const totalExpected = days.size * 3;
-  const adh = scheduledRows.filter(r => r.validForAdherence === 'SI' || r.validForAdherence === true).length;
-  document.getElementById('sc-adherence').textContent = totalExpected ? Math.round(adh / totalExpected * 100) + '%' : '—';
+  const byPatientSlots = {};
+  const byPatientDays = {};
+  scheduledRows.forEach(r => {
+    const pid = r.email || r.userRef || 'unknown';
+    if (!byPatientSlots[pid]) byPatientSlots[pid] = new Set();
+    if (!byPatientDays[pid]) byPatientDays[pid] = new Set();
+    if (r.dayKey && r.slot) byPatientSlots[pid].add(r.dayKey.substring(0,10) + '_' + r.slot);
+    if (r.dayKey) byPatientDays[pid].add(r.dayKey.substring(0,10));
+  });
+  const patientAdhs = Object.keys(byPatientSlots).map(pid => {
+    const completed = byPatientSlots[pid].size;
+    const expected = (byPatientDays[pid] ? byPatientDays[pid].size : 1) * 3;
+    return completed / expected;
+  });
+  const meanAdh = patientAdhs.length ? patientAdhs.reduce((a,b) => a+b, 0) / patientAdhs.length : null;
+  document.getElementById('sc-adherence').textContent = meanAdh !== null ? Math.round(meanAdh * 100) + '%' : '—';
   document.getElementById('sc-records').textContent = rows.length;
 
   const idAvg = avg(rows.map(r => r.ideation));
@@ -586,6 +643,96 @@ function toggleVar(btn) {
     btn.classList.add('active');
   }
   renderMainChart(getFilteredRows());
+}
+
+// ─── TABLA DETALLADA ────────────────────────────────────
+let detailPage = 0;
+const DETAIL_PAGE_SIZE = 15;
+let detailRows = [];
+
+function renderDetailTable(rows) {
+  detailRows = [...rows].sort((a, b) => {
+    const da = a.dayKey || ''; const db = b.dayKey || '';
+    if (da !== db) return db.localeCompare(da);
+    const slotOrder = { morning: 0, afternoon: 1, night: 2 };
+    return (slotOrder[a.slot] ?? 3) - (slotOrder[b.slot] ?? 3);
+  });
+  detailPage = 0;
+  renderDetailPage();
+}
+
+function renderDetailPage() {
+  const view = document.getElementById('detail-view').value;
+  const thead = document.getElementById('detail-thead');
+  const tbody = document.getElementById('detail-tbody');
+  const start = detailPage * DETAIL_PAGE_SIZE;
+  const pageRows = detailRows.slice(start, start + DETAIL_PAGE_SIZE);
+
+  if (view === 'scores') {
+    thead.innerHTML = `<tr>
+      <th class="detail-th">Fecha</th>
+      <th class="detail-th">Slot</th>
+      <th class="detail-th">Tipo</th>
+      <th class="detail-th">Ideación</th>
+      <th class="detail-th">Estrés</th>
+      <th class="detail-th">Ánimo</th>
+      <th class="detail-th">Sueño</th>
+      <th class="detail-th">Entrapment</th>
+      <th class="detail-th">Burden</th>
+      <th class="detail-th">Belonging</th>
+      <th class="detail-th">Control</th>
+    </tr>`;
+    tbody.innerHTML = pageRows.map(r => {
+      const slotCls = 'slot-' + (r.slot || 'extra');
+      return `<tr class="detail-tr">
+        <td class="detail-td" style="white-space:nowrap; color:#555;">${r.dayKey || '—'}</td>
+        <td class="detail-td"><span class="slot-badge ${slotCls}">${r.slot || '—'}</span></td>
+        <td class="detail-td" style="color:#999; font-size:11px;">${r.entryType || '—'}</td>
+        ${['ideation','stress','mood','sleep','entrapment','burden','belonging','control'].map(f => {
+          const v = r[f];
+          const n = v !== '' && v !== undefined ? parseFloat(v) : null;
+          let cls = '';
+          if (n !== null) {
+            if (f === 'ideation' && n >= 5) cls = 'num-high';
+            else if (f === 'ideation' && n >= 3) cls = 'num-mid';
+            else if (f === 'mood' || f === 'belonging') cls = n >= 7 ? 'num-ok' : n <= 3 ? 'num-high' : '';
+          }
+          return `<td class="detail-td"><span class="num-cell ${cls}">${n !== null ? n : '—'}</span></td>`;
+        }).join('')}
+      </tr>`;
+    }).join('') || '<tr><td colspan="11" class="loading">Sin registros</td></tr>';
+  } else {
+    thead.innerHTML = `<tr>
+      <th class="detail-th">Fecha</th>
+      <th class="detail-th">Slot</th>
+      <th class="detail-th">Tono</th>
+      <th class="detail-th">Temas</th>
+      <th class="detail-th">Lenguaje riesgo</th>
+      <th class="detail-th">Lenguaje protector</th>
+      <th class="detail-th">Coherencia</th>
+    </tr>`;
+    tbody.innerHTML = pageRows.map(r => {
+      return `<tr class="detail-tr">
+        <td class="detail-td" style="white-space:nowrap; color:#555;">${r.dayKey || '—'}</td>
+        <td class="detail-td"><span class="slot-badge slot-${r.slot || 'extra'}">${r.slot || '—'}</span></td>
+        <td class="detail-td" style="color:#555;">${r.ia_tone || '—'}</td>
+        <td class="detail-td" style="max-width:200px; color:#555;">${r.ia_themes || '—'}</td>
+        <td class="detail-td" style="max-width:180px; color:${r.ia_risk_language && r.ia_risk_language !== '—' ? '#c62828' : '#aaa'};">${r.ia_risk_language || '—'}</td>
+        <td class="detail-td" style="max-width:180px; color:${r.ia_protective_language && r.ia_protective_language !== '—' ? '#2e7d32' : '#aaa'};">${r.ia_protective_language || '—'}</td>
+        <td class="detail-td" style="color:#555;">${r.ia_coherence || '—'}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="7" class="loading">Sin registros con análisis IA</td></tr>';
+  }
+
+  // Paginación
+  const totalPages = Math.ceil(detailRows.length / DETAIL_PAGE_SIZE);
+  const pag = document.getElementById('detail-pagination');
+  if (totalPages <= 1) { pag.innerHTML = ''; return; }
+  let html = '';
+  for (let i = 0; i < totalPages; i++) {
+    html += `<button class="page-btn ${i === detailPage ? 'active' : ''}" onclick="detailPage=${i}; renderDetailPage();">${i+1}</button>`;
+  }
+  pag.innerHTML = html;
 }
 
 function showError(msg) {
