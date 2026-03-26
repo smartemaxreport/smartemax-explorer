@@ -80,67 +80,76 @@
     .chart-title { font-size: 16px; font-weight: 600; }
     .chart-sub { font-size: 13px; color: #888; margin-top: 2px; }
 
-    .var-selector {
-      display: flex; gap: 8px; flex-wrap: wrap;
-    }
+    .var-selector { display: flex; gap: 8px; flex-wrap: wrap; }
     .var-btn {
       padding: 5px 12px; border-radius: 20px; border: 1.5px solid #ddd;
-      font-size: 12px; cursor: pointer; background: white; transition: all 0.15s;
-      font-weight: 500;
+      font-size: 12px; cursor: pointer; background: white; transition: all 0.15s; font-weight: 500;
     }
     .var-btn.active { color: white; border-color: transparent; }
-    .var-btn[data-var="ideation"].active { background: #e53935; border-color: #e53935; }
-    .var-btn[data-var="stress"].active { background: #1976d2; border-color: #1976d2; }
-    .var-btn[data-var="mood"].active { background: #388e3c; border-color: #388e3c; }
-    .var-btn[data-var="sleep"].active { background: #f57c00; border-color: #f57c00; }
-    .var-btn[data-var="entrapment"].active { background: #7b1fa2; border-color: #7b1fa2; }
-    .var-btn[data-var="burden"].active { background: #00838f; border-color: #00838f; }
+    .var-btn[data-var="ideation"].active  { background: #e53935; border-color: #e53935; }
+    .var-btn[data-var="stress"].active    { background: #1976d2; border-color: #1976d2; }
+    .var-btn[data-var="mood"].active      { background: #388e3c; border-color: #388e3c; }
+    .var-btn[data-var="sleep"].active     { background: #f57c00; border-color: #f57c00; }
+    .var-btn[data-var="entrapment"].active{ background: #7b1fa2; border-color: #7b1fa2; }
+    .var-btn[data-var="burden"].active    { background: #00838f; border-color: #00838f; }
     .var-btn[data-var="belonging"].active { background: #c2185b; border-color: #c2185b; }
-    .var-btn[data-var="control"].active { background: #5d4037; border-color: #5d4037; }
+    .var-btn[data-var="control"].active   { background: #5d4037; border-color: #5d4037; }
 
     .chart-canvas-wrap { position: relative; height: 320px; }
 
     .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     @media (max-width: 700px) { .bottom-grid { grid-template-columns: 1fr; } }
 
-    .adherence-bars { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-    .adherence-row { display: flex; align-items: center; gap: 10px; }
-    .adherence-day { font-size: 12px; color: #888; min-width: 80px; }
-    .adherence-bar-wrap { flex: 1; background: #f0f0f0; border-radius: 4px; height: 18px; overflow: hidden; }
-    .adherence-bar { height: 100%; border-radius: 4px; transition: width 0.3s; display: flex; align-items: center; padding-left: 6px; }
-    .adherence-bar span { font-size: 10px; color: white; font-weight: 500; }
-    .adherence-val { font-size: 12px; color: #666; min-width: 30px; text-align: right; }
+    /* ── HEATMAP ── */
+    .heatmap-wrap { overflow-x: auto; margin-top: 8px; }
+    .heatmap-table { border-collapse: separate; border-spacing: 4px; min-width: 100%; }
+    .heatmap-table th {
+      font-size: 11px; color: #888; font-weight: 500; text-transform: uppercase;
+      padding: 4px 6px; text-align: center;
+    }
+    .heatmap-table th.day-col { text-align: left; min-width: 64px; }
+    .heatmap-cell {
+      width: 44px; height: 32px; border-radius: 6px; text-align: center;
+      vertical-align: middle; font-size: 10px; font-weight: 600; cursor: default;
+    }
+    .heatmap-cell.done     { background: #c8e6c9; color: #1b5e20; }
+    .heatmap-cell.missed   { background: #ffcdd2; color: #b71c1c; }
+    .heatmap-cell.inactive { background: #f0f0f0; color: #bbb; }
+    .heatmap-cell.future   { background: #f9f9f9; color: #ccc; }
+    .heatmap-day { font-size: 12px; color: #666; padding: 4px 6px; vertical-align: middle; }
 
+    .heatmap-legend { display: flex; gap: 14px; margin-top: 12px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #666; }
+    .legend-sq { width: 14px; height: 14px; border-radius: 3px; }
+
+    /* ── ALERTAS ── */
     .patients-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
     .patients-table th { text-align: left; padding: 8px 10px; font-size: 11px; color: #888; text-transform: uppercase; border-bottom: 1px solid #eee; }
     .patients-table td { padding: 10px; border-bottom: 1px solid #f5f5f5; }
     .patients-table tr:last-child td { border-bottom: none; }
     .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
-    .badge.alto { background: #ffebee; color: #c62828; }
+    .badge.alto     { background: #ffebee; color: #c62828; }
     .badge.moderado { background: #fff8e1; color: #e65100; }
-    .badge.bajo { background: #e8f5e9; color: #2e7d32; }
+    .badge.bajo     { background: #e8f5e9; color: #2e7d32; }
 
     .loading { text-align: center; padding: 40px; color: #888; font-size: 14px; }
     .detail-th { text-align:left; padding:8px 10px; font-size:11px; color:#888; text-transform:uppercase; border-bottom:1.5px solid #e8e8e8; white-space:nowrap; }
     .detail-td { padding:9px 10px; border-bottom:0.5px solid #f0f0f0; vertical-align:top; }
     .detail-tr:hover td { background:#fafafa; }
     .slot-badge { font-size:10px; padding:2px 7px; border-radius:8px; font-weight:500; }
-    .slot-morning { background:#fff8e1; color:#e65100; }
+    .slot-morning   { background:#fff8e1; color:#e65100; }
     .slot-afternoon { background:#e3f2fd; color:#1565c0; }
-    .slot-night { background:#f3e5f5; color:#6a1b9a; }
-    .slot-extra { background:#e8f5e9; color:#2e7d32; }
-    .ia-card { background:#f8f9fa; border-radius:8px; padding:10px 12px; margin-bottom:6px; font-size:12px; }
-    .ia-label { font-size:10px; font-weight:600; color:#888; text-transform:uppercase; margin-bottom:3px; }
-    .ia-value { color:#1a1a1a; line-height:1.5; }
+    .slot-night     { background:#f3e5f5; color:#6a1b9a; }
+    .slot-extra     { background:#e8f5e9; color:#2e7d32; }
     .page-btn { padding:5px 10px; border:1px solid #ddd; border-radius:6px; background:white; cursor:pointer; font-size:12px; }
     .page-btn.active { background:#2e7d32; color:white; border-color:#2e7d32; }
     .page-btn:hover:not(.active) { background:#f5f5f5; }
     .num-cell { font-size:14px; font-weight:500; }
     .num-high { color:#c62828; }
-    .num-mid { color:#e65100; }
-    .num-ok { color:#2e7d32; }
+    .num-mid  { color:#e65100; }
+    .num-ok   { color:#2e7d32; }
     .error-msg { background: #ffebee; color: #c62828; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
-    .info-msg { background: #e8f5e9; color: #2e7d32; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+    .info-msg  { background: #e8f5e9; color: #2e7d32; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
   </style>
 </head>
 <body>
@@ -157,13 +166,8 @@
       data-auto_prompt="false">
     </div>
     <div class="g_id_signin"
-      data-type="standard"
-      data-size="large"
-      data-theme="outline"
-      data-text="signin_with"
-      data-shape="rectangular"
-      data-locale="es"
-      data-width="280">
+      data-type="standard" data-size="large" data-theme="outline"
+      data-text="signin_with" data-shape="rectangular" data-locale="es" data-width="280">
     </div>
     <div id="login-error" style="margin-top:16px; font-size:13px; color:#c62828; display:none;"></div>
   </div>
@@ -184,7 +188,7 @@
 
   <main>
     <div id="error-banner" class="error-msg" style="display:none;"></div>
-    <div id="info-banner" class="info-msg" style="display:none;"></div>
+    <div id="info-banner"  class="info-msg"  style="display:none;"></div>
 
     <!-- CONTROLES -->
     <div class="controls">
@@ -256,14 +260,14 @@
           <div class="chart-sub">Media diaria · selecciona las variables a mostrar</div>
         </div>
         <div class="var-selector">
-          <button class="var-btn active" data-var="ideation" onclick="toggleVar(this)">Ideación</button>
-          <button class="var-btn active" data-var="stress" onclick="toggleVar(this)">Estrés</button>
-          <button class="var-btn" data-var="mood" onclick="toggleVar(this)">Ánimo</button>
-          <button class="var-btn" data-var="sleep" onclick="toggleVar(this)">Sueño</button>
-          <button class="var-btn" data-var="entrapment" onclick="toggleVar(this)">Entrapment</button>
-          <button class="var-btn" data-var="burden" onclick="toggleVar(this)">Burden</button>
-          <button class="var-btn" data-var="belonging" onclick="toggleVar(this)">Belonging</button>
-          <button class="var-btn" data-var="control" onclick="toggleVar(this)">Control</button>
+          <button class="var-btn active" data-var="ideation"   onclick="toggleVar(this)">Ideación</button>
+          <button class="var-btn active" data-var="stress"     onclick="toggleVar(this)">Estrés</button>
+          <button class="var-btn"        data-var="mood"       onclick="toggleVar(this)">Ánimo</button>
+          <button class="var-btn"        data-var="sleep"      onclick="toggleVar(this)">Sueño</button>
+          <button class="var-btn"        data-var="entrapment" onclick="toggleVar(this)">Entrapment</button>
+          <button class="var-btn"        data-var="burden"     onclick="toggleVar(this)">Burden</button>
+          <button class="var-btn"        data-var="belonging"  onclick="toggleVar(this)">Belonging</button>
+          <button class="var-btn"        data-var="control"    onclick="toggleVar(this)">Control</button>
         </div>
       </div>
       <div class="chart-canvas-wrap">
@@ -273,14 +277,22 @@
 
     <!-- FILA INFERIOR -->
     <div class="bottom-grid">
+
+      <!-- HEATMAP -->
       <div class="chart-section" style="margin-bottom:0">
-        <div class="chart-title">Adherencia por día</div>
-        <div class="chart-sub" style="margin-bottom:12px">Slots completados (0–3)</div>
-        <div class="adherence-bars" id="adherence-bars">
+        <div class="chart-title">Cumplimiento por slot y día</div>
+        <div class="chart-sub" style="margin-bottom:4px">Evaluaciones scheduled · últimos 14 días activos</div>
+        <div class="heatmap-wrap" id="heatmap-wrap">
           <div class="loading">Cargando...</div>
+        </div>
+        <div class="heatmap-legend">
+          <div class="legend-item"><div class="legend-sq" style="background:#c8e6c9"></div>Completado</div>
+          <div class="legend-item"><div class="legend-sq" style="background:#ffcdd2"></div>No completado</div>
+          <div class="legend-item"><div class="legend-sq" style="background:#f0f0f0"></div>Sin actividad</div>
         </div>
       </div>
 
+      <!-- ALERTAS -->
       <div class="chart-section" style="margin-bottom:0">
         <div class="chart-title">Alertas por paciente</div>
         <div class="chart-sub" style="margin-bottom:12px">Basado en ideación media e ideación máxima</div>
@@ -329,10 +341,11 @@
 </div>
 
 <script>
-const SHEET_ID = '1u2TZAhikb5tS_ijVdRrYkxjl2_LWrwtAkm05o8RXCxM';
-const SHEET_NAME = 'Hoja 1';
-const CLIENT_ID = '889272379169-3ocehqb1urug88gkr3qp02jg2aqkla33.apps.googleusercontent.com';
-const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+const SHEET_ID       = '1u2TZAhikb5tS_ijVdRrYkxjl2_LWrwtAkm05o8RXCxM';
+const SHEET_NAME     = 'Hoja 1';
+const SHEET_PATIENTS = 'Pacientes';
+const CLIENT_ID      = '889272379169-3ocehqb1urug88gkr3qp02jg2aqkla33.apps.googleusercontent.com';
+const SCOPES         = 'https://www.googleapis.com/auth/spreadsheets.readonly';
 
 const COLORS = {
   ideation:   '#e53935',
@@ -345,11 +358,61 @@ const COLORS = {
   control:    '#5d4037',
 };
 
-let accessToken = null;
-let tokenClient = null;
-let allRows = [];
-let mainChart = null;
-let activeVars = new Set(['ideation', 'stress']);
+const SLOTS = ['morning', 'afternoon', 'night'];
+const SLOT_LABELS = { morning: 'Mañana', afternoon: 'Tarde', night: 'Noche' };
+
+let accessToken  = null;
+let tokenClient  = null;
+let allRows      = [];
+// patientMeta: { [email]: { firstDay: 'YYYY-MM-DD', lastDay: 'YYYY-MM-DD' | null } }
+let patientMeta  = {};
+let mainChart    = null;
+let activeVars   = new Set(['ideation', 'stress']);
+
+// ─── UTILIDADES DE FECHA ────────────────────────────────
+function todayStr() {
+  return new Date().toISOString().substring(0, 10);
+}
+
+function yesterdayStr() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().substring(0, 10);
+}
+
+// Normaliza fechas que pueden venir como "01/01/2026" o "2026-01-01"
+function normalizeDate(raw) {
+  if (!raw) return null;
+  raw = raw.trim();
+  // formato DD/MM/YYYY
+  const dmyMatch = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dmyMatch) {
+    const [, d, m, y] = dmyMatch;
+    return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+  }
+  // formato YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  return null;
+}
+
+// Número de días entre dos fechas YYYY-MM-DD (inclusive ambos extremos)
+function daysBetween(from, to) {
+  const a = new Date(from + 'T00:00:00');
+  const b = new Date(to   + 'T00:00:00');
+  return Math.round((b - a) / 86400000) + 1;
+}
+
+// Genera array de fechas YYYY-MM-DD entre from y to inclusive
+function dateRange(from, to) {
+  const result = [];
+  const cur = new Date(from + 'T00:00:00');
+  const end = new Date(to   + 'T00:00:00');
+  while (cur <= end) {
+    result.push(cur.toISOString().substring(0, 10));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return result;
+}
 
 // ─── AUTH ───────────────────────────────────────────────
 function handleCredential(response) {
@@ -368,10 +431,7 @@ function initTokenClient() {
     client_id: CLIENT_ID,
     scope: SCOPES,
     callback: (tokenResponse) => {
-      if (tokenResponse.error) {
-        showError('Error al obtener acceso: ' + tokenResponse.error);
-        return;
-      }
+      if (tokenResponse.error) { showError('Error al obtener acceso: ' + tokenResponse.error); return; }
       accessToken = tokenResponse.access_token;
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
@@ -381,57 +441,72 @@ function initTokenClient() {
   tokenClient.requestAccessToken({ prompt: '' });
 }
 
-function refreshTokenAndRetry() {
-  if (!tokenClient) {
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
-    return;
-  }
-  // Token caducado - renovar sin pantalla de login
-  tokenClient.requestAccessToken({ prompt: '' });
-}
-
 function logout() {
-  accessToken = null;
-  tokenClient = null;
-  allRows = [];
+  accessToken = null; tokenClient = null; allRows = []; patientMeta = {};
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
   if (mainChart) { mainChart.destroy(); mainChart = null; }
 }
 
-// ─── DATOS ──────────────────────────────────────────────
+// ─── CARGA DE DATOS ─────────────────────────────────────
+async function fetchSheet(sheetName) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(sheetName)}`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (res.status === 401 || res.status === 403) { showReconnectBanner(); return null; }
+  if (!res.ok) throw new Error(`HTTP ${res.status} en hoja "${sheetName}"`);
+  const data = await res.json();
+  const [headers, ...rows] = data.values || [];
+  if (!headers) return [];
+  return rows.map(r => {
+    const obj = {};
+    headers.forEach((h, i) => obj[h.trim()] = (r[i] ?? '').trim());
+    return obj;
+  });
+}
+
 async function loadData() {
   if (!accessToken) return;
-  showInfo('Cargando datos del Sheet...');
+  showInfo('Cargando datos...');
   document.querySelector('.btn-load').disabled = true;
 
   try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}`;
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-    if (res.status === 401 || res.status === 403) {
-      showReconnectBanner();
-      return;
-    }
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    const data = await res.json();
-    const [headers, ...rows] = data.values || [];
-    if (!headers) throw new Error('El Sheet está vacío o no tiene cabeceras');
+    // Carga paralela de Hoja 1 y Pacientes
+    const [rows1, rowsPacientes] = await Promise.all([
+      fetchSheet(SHEET_NAME),
+      fetchSheet(SHEET_PATIENTS),
+    ]);
 
-    allRows = rows.map(r => {
-      const obj = {};
-      headers.forEach((h, i) => obj[h.trim()] = r[i] ?? '');
-      return obj;
-    }).filter(r => r.dayKey);
+    if (rows1 === null) return; // token expirado, ya se mostró banner
+
+    allRows = (rows1 || []).filter(r => r.dayKey);
+
+    // Construir patientMeta desde hoja Pacientes
+    patientMeta = {};
+    (rowsPacientes || []).forEach(p => {
+      const email = (p.email || p.Email || '').trim();
+      if (!email) return;
+      const fechaFin = normalizeDate(p['fecha fin'] || p['Fecha fin'] || p['FechaFin'] || '');
+      patientMeta[email] = { lastDay: fechaFin };
+    });
+
+    // Calcular firstDay por paciente a partir de allRows
+    allRows.forEach(r => {
+      const pid = r.email || r.userRef || '';
+      if (!pid) return;
+      const day = r.dayKey ? r.dayKey.substring(0, 10) : null;
+      if (!day) return;
+      if (!patientMeta[pid]) patientMeta[pid] = { lastDay: null };
+      if (!patientMeta[pid].firstDay || day < patientMeta[pid].firstDay) {
+        patientMeta[pid].firstDay = day;
+      }
+    });
 
     populatePatients();
     setDefaultDates();
     hideMessages();
     renderAll();
   } catch (e) {
-    showError('Error al leer el Sheet: ' + e.message);
+    showError('Error al leer datos: ' + e.message);
   } finally {
     document.querySelector('.btn-load').disabled = false;
   }
@@ -454,16 +529,16 @@ function setDefaultDates() {
   const days = allRows.map(r => r.dayKey).filter(Boolean).sort();
   if (!days.length) return;
   const from = document.getElementById('date-from');
-  const to = document.getElementById('date-to');
+  const to   = document.getElementById('date-to');
   if (!from.value) from.value = days[0].substring(0, 10);
-  if (!to.value) to.value = days[days.length - 1].substring(0, 10);
+  if (!to.value)   to.value   = days[days.length - 1].substring(0, 10);
 }
 
 function getFilteredRows() {
   const patient = document.getElementById('sel-patient').value;
-  const slot = document.getElementById('sel-slot').value;
-  const from = document.getElementById('date-from').value;
-  const to = document.getElementById('date-to').value;
+  const slot    = document.getElementById('sel-slot').value;
+  const from    = document.getElementById('date-from').value;
+  const to      = document.getElementById('date-to').value;
 
   return allRows.filter(r => {
     const id = r.email || r.userRef || '';
@@ -471,19 +546,19 @@ function getFilteredRows() {
     if (slot !== 'all' && r.slot !== slot) return false;
     const day = r.dayKey ? r.dayKey.substring(0, 10) : '';
     if (from && day < from) return false;
-    if (to && day > to) return false;
+    if (to   && day > to)   return false;
     return true;
   });
 }
 
 function onFilterChange() { renderAll(); }
 
-// ─── RENDER ─────────────────────────────────────────────
+// ─── RENDER PRINCIPAL ───────────────────────────────────
 function renderAll() {
   const rows = getFilteredRows();
   renderScorecards(rows);
   renderMainChart(rows);
-  renderAdherence(rows);
+  renderHeatmap(rows);
   renderAlerts();
   renderDetailTable(rows);
 }
@@ -493,38 +568,69 @@ function avg(arr) {
   return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
 }
 
+// ─── SCORECARDS ─────────────────────────────────────────
 function renderScorecards(rows) {
-  const fields = ['ideation', 'stress', 'mood', 'sleep'];
-  fields.forEach(f => {
+  ['ideation','stress','mood','sleep'].forEach(f => {
     const a = avg(rows.map(r => r[f]));
-    const el = document.getElementById('sc-' + f);
-    el.textContent = a !== null ? a.toFixed(1) : '—';
+    document.getElementById('sc-' + f).textContent = a !== null ? a.toFixed(1) : '—';
   });
 
-  const scheduledRows = rows.filter(r => r.entryType === 'scheduled');
-  const byPatientSlots = {};
-  const byPatientDays = {};
-  scheduledRows.forEach(r => {
-    const pid = r.email || r.userRef || 'unknown';
-    if (!byPatientSlots[pid]) byPatientSlots[pid] = new Set();
-    if (!byPatientDays[pid]) byPatientDays[pid] = new Set();
-    if (r.dayKey && r.slot) byPatientSlots[pid].add(r.dayKey.substring(0,10) + '_' + r.slot);
-    if (r.dayKey) byPatientDays[pid].add(r.dayKey.substring(0,10));
-  });
-  const patientAdhs = Object.keys(byPatientSlots).map(pid => {
-    const completed = byPatientSlots[pid].size;
-    const expected = (byPatientDays[pid] ? byPatientDays[pid].size : 1) * 3;
-    return completed / expected;
-  });
-  const meanAdh = patientAdhs.length ? patientAdhs.reduce((a,b) => a+b, 0) / patientAdhs.length : null;
-  document.getElementById('sc-adherence').textContent = meanAdh !== null ? Math.round(meanAdh * 100) + '%' : '—';
   document.getElementById('sc-records').textContent = rows.length;
 
+  // Adherencia correcta por paciente
+  const ayer = yesterdayStr();
+  const selectedPatient = document.getElementById('sel-patient').value;
+
+  const pids = selectedPatient !== 'all'
+    ? [selectedPatient]
+    : [...new Set(allRows.map(r => r.email || r.userRef).filter(Boolean))];
+
+  // Mapa de evaluaciones scheduled completadas: pid → Set de "YYYY-MM-DD_slot"
+  const completedByPid = {};
+  allRows.filter(r => r.entryType === 'scheduled').forEach(r => {
+    const pid = r.email || r.userRef || '';
+    const day = r.dayKey ? r.dayKey.substring(0, 10) : null;
+    if (!pid || !day || !r.slot) return;
+    if (!completedByPid[pid]) completedByPid[pid] = new Set();
+    completedByPid[pid].add(day + '_' + r.slot);
+  });
+
+  const adherences = pids.map(pid => {
+    const meta = patientMeta[pid] || {};
+    const firstDay = meta.firstDay || null;
+    if (!firstDay) return null;
+
+    // Límite superior: min(ayer, fechaFin)
+    let lastActive = ayer;
+    if (meta.lastDay && meta.lastDay < ayer) lastActive = meta.lastDay;
+
+    if (lastActive < firstDay) return null; // aún no hay días completos
+
+    const totalDays = daysBetween(firstDay, lastActive);
+    const totalExpected = totalDays * 3;
+
+    const completed = completedByPid[pid]
+      ? [...completedByPid[pid]].filter(k => {
+          const day = k.substring(0, 10);
+          return day >= firstDay && day <= lastActive;
+        }).length
+      : 0;
+
+    return totalExpected > 0 ? completed / totalExpected : null;
+  }).filter(v => v !== null);
+
+  const meanAdh = adherences.length
+    ? adherences.reduce((a, b) => a + b, 0) / adherences.length
+    : null;
+
+  document.getElementById('sc-adherence').textContent =
+    meanAdh !== null ? Math.round(meanAdh * 100) + '%' : '—';
+
   const idAvg = avg(rows.map(r => r.ideation));
-  const sc = document.querySelector('#scorecards .scorecard');
-  sc.classList.toggle('alert', idAvg !== null && idAvg > 5);
+  document.querySelector('#scorecards .scorecard').classList.toggle('alert', idAvg !== null && idAvg > 5);
 }
 
+// ─── GRÁFICO PRINCIPAL ──────────────────────────────────
 function renderMainChart(rows) {
   const byDay = {};
   rows.forEach(r => {
@@ -536,7 +642,7 @@ function renderMainChart(rows) {
     });
   });
 
-  const labels = Object.keys(byDay).sort();
+  const labels   = Object.keys(byDay).sort();
   const datasets = [];
 
   activeVars.forEach(v => {
@@ -548,11 +654,8 @@ function renderMainChart(rows) {
       }),
       borderColor: COLORS[v],
       backgroundColor: COLORS[v] + '22',
-      tension: 0.3,
-      pointRadius: 4,
-      pointHoverRadius: 6,
-      spanGaps: true,
-      borderWidth: 2,
+      tension: 0.3, pointRadius: 4, pointHoverRadius: 6,
+      spanGaps: true, borderWidth: 2,
     });
   });
 
@@ -576,40 +679,82 @@ function renderMainChart(rows) {
   });
 }
 
-function renderAdherence(rows) {
-  const byDay = {};
+// ─── HEATMAP ────────────────────────────────────────────
+function renderHeatmap(rows) {
+  const wrap = document.getElementById('heatmap-wrap');
+  const ayer = yesterdayStr();
+  const selectedPatient = document.getElementById('sel-patient').value;
+
+  // Construir Set de combinaciones completadas (scheduled) en las filas filtradas
+  // clave: "YYYY-MM-DD_slot"
+  const completedSet = new Set();
   rows.filter(r => r.entryType === 'scheduled').forEach(r => {
-    const day = r.dayKey ? r.dayKey.substring(0, 10) : 'sin fecha';
-    if (!byDay[day]) byDay[day] = { completed: 0 };
-    if (r.validForAdherence === 'SI' || r.validForAdherence === true) byDay[day].completed++;
+    const day = r.dayKey ? r.dayKey.substring(0, 10) : null;
+    if (day && r.slot) completedSet.add(day + '_' + r.slot);
   });
 
-  const days2 = Object.keys(byDay).sort().slice(-14);
-  const container = document.getElementById('adherence-bars');
-  container.innerHTML = '';
+  // Determinar rango de días a mostrar (últimos 14 días activos del paciente)
+  // Si hay un paciente seleccionado usamos su meta; si son todos, usamos los días con datos
+  let daysToShow = [];
 
-  if (!days2.length) { container.innerHTML = '<div class="loading">Sin datos</div>'; return; }
+  if (selectedPatient !== 'all') {
+    const meta = patientMeta[selectedPatient] || {};
+    const firstDay = meta.firstDay || null;
+    if (!firstDay) { wrap.innerHTML = '<div class="loading">Sin datos para este paciente</div>'; return; }
+    let lastActive = ayer;
+    if (meta.lastDay && meta.lastDay < ayer) lastActive = meta.lastDay;
+    if (lastActive < firstDay) { wrap.innerHTML = '<div class="loading">Sin días completos aún</div>'; return; }
+    const allDays = dateRange(firstDay, lastActive);
+    daysToShow = allDays.slice(-14); // últimos 14
+  } else {
+    // Todos los pacientes: mostrar días que aparecen en las filas filtradas, últimos 14
+    const daySet = new Set(rows.map(r => r.dayKey ? r.dayKey.substring(0,10) : null).filter(Boolean));
+    daysToShow = [...daySet].sort().filter(d => d <= ayer).slice(-14);
+    if (!daysToShow.length) { wrap.innerHTML = '<div class="loading">Sin datos</div>'; return; }
+  }
 
-  days2.forEach(day => {
-    const { completed } = byDay[day];
-    const total = 3;
-    const pct = Math.round(completed / total * 100);
-    const color = pct === 100 ? '#388e3c' : pct > 50 ? '#f57c00' : '#e53935';
-    const row = document.createElement('div');
-    row.className = 'adherence-row';
-    row.innerHTML = `
-      <span class="adherence-day">${day.slice(5)}</span>
-      <div class="adherence-bar-wrap">
-        <div class="adherence-bar" style="width:${pct}%; background:${color}">
-          <span>${pct > 20 ? pct + '%' : ''}</span>
-        </div>
-      </div>
-      <span class="adherence-val">${completed}/3</span>
-    `;
-    container.appendChild(row);
+  // Construir tabla
+  let html = '<table class="heatmap-table"><thead><tr>';
+  html += '<th class="day-col">Día</th>';
+  SLOTS.forEach(s => { html += `<th>${SLOT_LABELS[s]}</th>`; });
+  html += '</tr></thead><tbody>';
+
+  daysToShow.forEach(day => {
+    html += `<tr><td class="heatmap-day">${day.slice(5)}</td>`;
+    SLOTS.forEach(slot => {
+      const key = day + '_' + slot;
+      const isDone   = completedSet.has(key);
+      const isPast   = day <= ayer;
+
+      let cls, label;
+      if (isDone) {
+        cls = 'done'; label = '✓';
+      } else if (isPast) {
+        cls = 'missed'; label = '✗';
+      } else {
+        cls = 'future'; label = '·';
+      }
+
+      // Si el paciente está seleccionado, marcar como inactivo si está fuera de su periodo
+      if (selectedPatient !== 'all') {
+        const meta = patientMeta[selectedPatient] || {};
+        const firstDay = meta.firstDay || day;
+        const lastActive = meta.lastDay && meta.lastDay < ayer ? meta.lastDay : ayer;
+        if (day < firstDay || day > lastActive) {
+          cls = 'inactive'; label = '—';
+        }
+      }
+
+      html += `<td class="heatmap-cell ${cls}" title="${day} · ${SLOT_LABELS[slot]}">${label}</td>`;
+    });
+    html += '</tr>';
   });
+
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
 }
 
+// ─── ALERTAS ────────────────────────────────────────────
 function renderAlerts() {
   const byPatient = {};
   allRows.forEach(r => {
@@ -621,33 +766,36 @@ function renderAlerts() {
   const tbody = document.getElementById('alerts-table');
   tbody.innerHTML = '';
 
-  Object.entries(byPatient).sort((a,b) => {
-    const aAvg = a[1].length ? a[1].reduce((x,y)=>x+y,0)/a[1].length : 0;
-    const bAvg = b[1].length ? b[1].reduce((x,y)=>x+y,0)/b[1].length : 0;
-    return bAvg - aAvg;
-  }).forEach(([patient, vals]) => {
-    const mean = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
-    const max = vals.length ? Math.max(...vals) : 0;
-    let level, cls;
-    if (mean > 5 || max >= 8) { level = 'ALTO'; cls = 'alto'; }
-    else if (mean > 3 || max >= 5) { level = 'MODERADO'; cls = 'moderado'; }
-    else { level = 'BAJO'; cls = 'bajo'; }
+  Object.entries(byPatient)
+    .sort((a, b) => {
+      const aAvg = a[1].length ? a[1].reduce((x,y)=>x+y,0)/a[1].length : 0;
+      const bAvg = b[1].length ? b[1].reduce((x,y)=>x+y,0)/b[1].length : 0;
+      return bAvg - aAvg;
+    })
+    .forEach(([patient, vals]) => {
+      const mean = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+      const max  = vals.length ? Math.max(...vals) : 0;
+      let level, cls;
+      if (mean > 5 || max >= 8)      { level = 'ALTO';     cls = 'alto'; }
+      else if (mean > 3 || max >= 5) { level = 'MODERADO'; cls = 'moderado'; }
+      else                           { level = 'BAJO';     cls = 'bajo'; }
 
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td style="font-size:12px; color:#555; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${patient}">${patient}</td>
-      <td style="font-size:13px; font-weight:500;">${mean.toFixed(1)}</td>
-      <td style="font-size:13px;">${max.toFixed(1)}</td>
-      <td><span class="badge ${cls}">${level}</span></td>
-    `;
-    tbody.appendChild(tr);
-  });
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-size:12px; color:#555; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${patient}">${patient}</td>
+        <td style="font-size:13px; font-weight:500;">${mean.toFixed(1)}</td>
+        <td style="font-size:13px;">${max.toFixed(1)}</td>
+        <td><span class="badge ${cls}">${level}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
 
   if (!Object.keys(byPatient).length) {
     tbody.innerHTML = '<tr><td colspan="4" class="loading">Sin datos</td></tr>';
   }
 }
 
+// ─── TOGGLE VARIABLES ───────────────────────────────────
 function toggleVar(btn) {
   const v = btn.dataset.var;
   if (activeVars.has(v)) {
@@ -678,7 +826,7 @@ function renderDetailTable(rows) {
 }
 
 function renderDetailPage() {
-  const view = document.getElementById('detail-view').value;
+  const view  = document.getElementById('detail-view').value;
   const thead = document.getElementById('detail-thead');
   const tbody = document.getElementById('detail-tbody');
   const start = detailPage * DETAIL_PAGE_SIZE;
@@ -686,17 +834,10 @@ function renderDetailPage() {
 
   if (view === 'scores') {
     thead.innerHTML = `<tr>
-      <th class="detail-th">Fecha</th>
-      <th class="detail-th">Slot</th>
-      <th class="detail-th">Tipo</th>
-      <th class="detail-th">Ideación</th>
-      <th class="detail-th">Estrés</th>
-      <th class="detail-th">Ánimo</th>
-      <th class="detail-th">Sueño</th>
-      <th class="detail-th">Entrapment</th>
-      <th class="detail-th">Burden</th>
-      <th class="detail-th">Belonging</th>
-      <th class="detail-th">Control</th>
+      <th class="detail-th">Fecha</th><th class="detail-th">Slot</th><th class="detail-th">Tipo</th>
+      <th class="detail-th">Ideación</th><th class="detail-th">Estrés</th><th class="detail-th">Ánimo</th>
+      <th class="detail-th">Sueño</th><th class="detail-th">Entrapment</th>
+      <th class="detail-th">Burden</th><th class="detail-th">Belonging</th><th class="detail-th">Control</th>
     </tr>`;
     tbody.innerHTML = pageRows.map(r => {
       const slotCls = 'slot-' + (r.slot || 'extra');
@@ -711,33 +852,30 @@ function renderDetailPage() {
           if (n !== null) {
             if (f === 'ideation' && n >= 5) cls = 'num-high';
             else if (f === 'ideation' && n >= 3) cls = 'num-mid';
-            else if (f === 'mood' || f === 'belonging') cls = n >= 7 ? 'num-ok' : n <= 3 ? 'num-high' : '';
+            else if ((f === 'mood' || f === 'belonging') && n >= 7) cls = 'num-ok';
+            else if ((f === 'mood' || f === 'belonging') && n <= 3) cls = 'num-high';
           }
           return `<td class="detail-td"><span class="num-cell ${cls}">${n !== null ? n : '—'}</span></td>`;
         }).join('')}
       </tr>`;
     }).join('') || '<tr><td colspan="11" class="loading">Sin registros</td></tr>';
+
   } else {
     thead.innerHTML = `<tr>
-      <th class="detail-th">Fecha</th>
-      <th class="detail-th">Slot</th>
-      <th class="detail-th">Tono</th>
-      <th class="detail-th">Temas</th>
-      <th class="detail-th">Lenguaje riesgo</th>
-      <th class="detail-th">Lenguaje protector</th>
+      <th class="detail-th">Fecha</th><th class="detail-th">Slot</th>
+      <th class="detail-th">Tono</th><th class="detail-th">Temas</th>
+      <th class="detail-th">Lenguaje riesgo</th><th class="detail-th">Lenguaje protector</th>
       <th class="detail-th">Coherencia</th>
     </tr>`;
-    tbody.innerHTML = pageRows.map(r => {
-      return `<tr class="detail-tr">
-        <td class="detail-td" style="white-space:nowrap; color:#555;">${r.dayKey || '—'}</td>
-        <td class="detail-td"><span class="slot-badge slot-${r.slot || 'extra'}">${r.slot || '—'}</span></td>
-        <td class="detail-td" style="color:#555;">${r.ia_tone || '—'}</td>
-        <td class="detail-td" style="max-width:200px; color:#555;">${r.ia_themes || '—'}</td>
-        <td class="detail-td" style="max-width:180px; color:${r.ia_risk_language && r.ia_risk_language !== '—' ? '#c62828' : '#aaa'};">${r.ia_risk_language || '—'}</td>
-        <td class="detail-td" style="max-width:180px; color:${r.ia_protective_language && r.ia_protective_language !== '—' ? '#2e7d32' : '#aaa'};">${r.ia_protective_language || '—'}</td>
-        <td class="detail-td" style="color:#555;">${r.ia_coherence || '—'}</td>
-      </tr>`;
-    }).join('') || '<tr><td colspan="7" class="loading">Sin registros con análisis IA</td></tr>';
+    tbody.innerHTML = pageRows.map(r => `<tr class="detail-tr">
+      <td class="detail-td" style="white-space:nowrap; color:#555;">${r.dayKey || '—'}</td>
+      <td class="detail-td"><span class="slot-badge slot-${r.slot || 'extra'}">${r.slot || '—'}</span></td>
+      <td class="detail-td" style="color:#555;">${r.ia_tone || '—'}</td>
+      <td class="detail-td" style="max-width:200px; color:#555;">${r.ia_themes || '—'}</td>
+      <td class="detail-td" style="max-width:180px; color:${r.ia_risk_language && r.ia_risk_language !== '—' ? '#c62828' : '#aaa'};">${r.ia_risk_language || '—'}</td>
+      <td class="detail-td" style="max-width:180px; color:${r.ia_protective_language && r.ia_protective_language !== '—' ? '#2e7d32' : '#aaa'};">${r.ia_protective_language || '—'}</td>
+      <td class="detail-td" style="color:#555;">${r.ia_coherence || '—'}</td>
+    </tr>`).join('') || '<tr><td colspan="7" class="loading">Sin registros con análisis IA</td></tr>';
   }
 
   // Paginación
@@ -751,22 +889,17 @@ function renderDetailPage() {
   pag.innerHTML = html;
 }
 
+// ─── BANNERS ────────────────────────────────────────────
 function showReconnectBanner() {
   const el = document.getElementById('error-banner');
   el.innerHTML = 'Sesión caducada. <button onclick="reconnect()" style="margin-left:8px; padding:4px 12px; background:#c62828; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px;">Reconectar</button>';
   el.style.display = 'block';
   document.getElementById('info-banner').style.display = 'none';
 }
-
 function reconnect() {
-  if (tokenClient) {
-    tokenClient.requestAccessToken({ prompt: '' });
-  } else {
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
-  }
+  if (tokenClient) tokenClient.requestAccessToken({ prompt: '' });
+  else { document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app').style.display = 'none'; }
 }
-
 function showError(msg) {
   const el = document.getElementById('error-banner');
   el.textContent = msg; el.style.display = 'block';
