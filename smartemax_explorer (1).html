@@ -497,7 +497,14 @@ async function loadData() {
 
     if (rows1 === null) return; // token expirado, ya se mostró banner
 
-    allRows = (rows1 || []).filter(r => r.dayKey);
+    allRows = (rows1 || []).filter(r => r.dayKey).map(r => {
+      // Normalizar dayKey a YYYY-MM-DD (puede venir como YYYY-M-D)
+      if (r.dayKey && /^\d{4}-\d{1,2}-\d{1,2}$/.test(r.dayKey.trim())) {
+        const parts = r.dayKey.trim().split('-');
+        r.dayKey = `${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
+      }
+      return r;
+    });
 
     // Construir patientMeta desde hoja Pacientes
     patientMeta = {};
