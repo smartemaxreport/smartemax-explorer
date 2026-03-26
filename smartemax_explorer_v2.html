@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartEmax Explorer</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; }
+
+    #login-screen {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh; gap: 24px;
+    }
+    .login-card {
+      background: white; border-radius: 16px; padding: 48px 40px; text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08); max-width: 400px; width: 90%;
+    }
+    .login-logo { font-size: 40px; margin-bottom: 8px; }
+    .login-title { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+    .login-sub { font-size: 14px; color: #666; margin-bottom: 32px; }
+
+    #app { display: none; }
+
+    header {
+      background: white; border-bottom: 1px solid #e8e8e8;
+      padding: 0 24px; display: flex; align-items: center; justify-content: space-between;
+      height: 56px; position: sticky; top: 0; z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-logo { font-size: 18px; font-weight: 600; color: #1a1a1a; }
+    .header-badge { font-size: 11px; background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .user-info { font-size: 13px; color: #666; }
+    .btn-logout { font-size: 12px; padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px; background: white; cursor: pointer; color: #666; }
+    .btn-logout:hover { background: #f5f5f5; }
+
+    main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+    .controls {
+      background: white; border-radius: 12px; padding: 20px 24px;
+      display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;
+      margin-bottom: 20px; border: 1px solid #e8e8e8;
+    }
+    .control-group { display: flex; flex-direction: column; gap: 6px; }
+    .control-group label { font-size: 12px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.3px; }
+    select, input[type="date"] {
+      padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px;
+      font-size: 14px; background: white; color: #1a1a1a; min-width: 180px;
+    }
+    select:focus, input:focus { outline: none; border-color: #4CAF50; }
+    .btn-load {
+      padding: 8px 20px; background: #2e7d32; color: white; border: none;
+      border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;
+    }
+    .btn-load:hover { background: #1b5e20; }
+    .btn-load:disabled { background: #ccc; cursor: not-allowed; }
+
+    .scorecards {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px; margin-bottom: 20px;
+    }
+    .scorecard {
+      background: white; border-radius: 10px; padding: 16px;
+      border: 1px solid #e8e8e8; text-align: center;
+    }
+    .scorecard.alert { background: #fff3f3; border-color: #ffcdd2; }
+    .scorecard-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px; }
+    .scorecard-value { font-size: 28px; font-weight: 600; color: #1a1a1a; }
+    .scorecard.alert .scorecard-value { color: #c62828; }
+    .scorecard-sub { font-size: 11px; color: #aaa; margin-top: 4px; }
+
+    .chart-section {
+      background: white; border-radius: 12px; padding: 24px;
+      border: 1px solid #e8e8e8; margin-bottom: 20px;
+    }
+    .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+    .chart-title { font-size: 16px; font-weight: 600; }
+    .chart-sub { font-size: 13px; color: #888; margin-top: 2px; }
+
+    .var-selector { display: flex; gap: 8px; flex-wrap: wrap; }
+    .var-btn {
+      padding: 5px 12px; border-radius: 20px; border: 1.5px solid #ddd;
+      font-size: 12px; cursor: pointer; background: white; transition: all 0.15s; font-weight: 500;
+    }
+    .var-btn.active { color: white; border-color: transparent; }
+    .var-btn[data-var="ideation"].active  { background: #e53935; border-color: #e53935; }
+    .var-btn[data-var="stress"].active    { background: #1976d2; border-color: #1976d2; }
+    .var-btn[data-var="mood"].active      { background: #388e3c; border-color: #388e3c; }
+    .var-btn[data-var="sleep"].active     { background: #f57c00; border-color: #f57c00; }
+    .var-btn[data-var="entrapment"].active{ background: #7b1fa2; border-color: #7b1fa2; }
+    .var-btn[data-var="burden"].active    { background: #00838f; border-color: #00838f; }
+    .var-btn[data-var="belonging"].active { background: #c2185b; border-color: #c2185b; }
+    .var-btn[data-var="control"].active   { background: #5d4037; border-color: #5d4037; }
+
+    .chart-canvas-wrap { position: relative; height: 320px; }
+
+    .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 700px) { .bottom-grid { grid-template-columns: 1fr; } }
+
+    /* ── HEATMAP ── */
+    .heatmap-wrap { overflow-x: auto; margin-top: 8px; }
+    .heatmap-table { border-collapse: separate; border-spacing: 4px; min-width: 100%; }
+    .heatmap-table th {
+      font-size: 11px; color: #888; font-weight: 500; text-transform: uppercase;
+      padding: 4px 6px; text-align: center;
+    }
+    .heatmap-table th.day-col { text-align: left; min-width: 64px; }
+    .heatmap-cell {
+      width: 44px; height: 32px; border-radius: 6px; text-align: center;
+      vertical-align: middle; font-size: 10px; font-weight: 600; cursor: default;
+    }
+    .heatmap-cell.done     { background: #c8e6c9; color: #1b5e20; }
+    .heatmap-cell.missed   { background: #ffcdd2; color: #b71c1c; }
+    .heatmap-cell.inactive { background: #f0f0f0; color: #bbb; }
+    .heatmap-cell.future   { background: #f9f9f9; color: #ccc; }
+    .heatmap-day { font-size: 12px; color: #666; padding: 4px 6px; vertical-align: middle; }
+
+    .heatmap-legend { display: flex; gap: 14px; margin-top: 12px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #666; }
+    .legend-sq { width: 14px; height: 14px; border-radius: 3px; }
+
+    /* ── ALERTAS ── */
+    .patients-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+    .patients-table th { text-align: left; padding: 8px 10px; font-size: 11px; color: #888; text-transform: uppercase; border-bottom: 1px solid #eee; }
+    .patients-table td { padding: 10px; border-bottom: 1px solid #f5f5f5; }
+    .patients-table tr:last-child td { border-bottom: none; }
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+    .badge.alto     { background: #ffebee; color: #c62828; }
+    .badge.moderado { background: #fff8e1; color: #e65100; }
+    .badge.bajo     { background: #e8f5e9; color: #2e7d32; }
+
+    .loading { text-align: center; padding: 40px; color: #888; font-size: 14px; }
+    .detail-th { text-align:left; padding:8px 10px; font-size:11px; color:#888; text-transform:uppercase; border-bottom:1.5px solid #e8e8e8; white-space:nowrap; }
+    .detail-td { padding:9px 10px; border-bottom:0.5px solid #f0f0f0; vertical-align:top; }
+    .detail-tr:hover td { background:#fafafa; }
+    .slot-badge { font-size:10px; padding:2px 7px; border-radius:8px; font-weight:500; }
+    .slot-morning   { background:#fff8e1; color:#e65100; }
+    .slot-afternoon { background:#e3f2fd; color:#1565c0; }
+    .slot-night     { background:#f3e5f5; color:#6a1b9a; }
+    .slot-extra     { background:#e8f5e9; color:#2e7d32; }
+    .page-btn { padding:5px 10px; border:1px solid #ddd; border-radius:6px; background:white; cursor:pointer; font-size:12px; }
+    .page-btn.active { background:#2e7d32; color:white; border-color:#2e7d32; }
+    .page-btn:hover:not(.active) { background:#f5f5f5; }
+    .num-cell { font-size:14px; font-weight:500; }
+    .num-high { color:#c62828; }
+    .num-mid  { color:#e65100; }
+    .num-ok   { color:#2e7d32; }
+    .error-msg { background: #ffebee; color: #c62828; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+    .info-msg  { background: #e8f5e9; color: #2e7d32; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🧠</div>
+    <div class="login-title">SmartEmax Explorer</div>
+    <div class="login-sub">Herramienta de exploración clínica EMA.<br>Inicia sesión con tu cuenta de Google.</div>
+    <div id="g_id_onload"
+      data-client_id="889272379169-3ocehqb1urug88gkr3qp02jg2aqkla33.apps.googleusercontent.com"
+      data-callback="handleCredential"
+      data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin"
+      data-type="standard" data-size="large" data-theme="outline"
+      data-text="signin_with" data-shape="rectangular" data-locale="es" data-width="280">
+    </div>
+    <div id="login-error" style="margin-top:16px; font-size:13px; color:#c62828; display:none;"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="header-left">
+      <span class="header-logo">🧠 SmartEmax Explorer</span>
+      <span class="header-badge">Exploración clínica</span>
+    </div>
+    <div class="header-right">
+      <span class="user-info" id="user-email"></span>
+      <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="error-banner" class="error-msg" style="display:none;"></div>
+    <div id="info-banner"  class="info-msg"  style="display:none;"></div>
+
+    <!-- CONTROLES -->
+    <div class="controls">
+      <div class="control-group">
+        <label>Paciente</label>
+        <select id="sel-patient" onchange="onFilterChange()">
+          <option value="all">Todos los pacientes</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Slot</label>
+        <select id="sel-slot" onchange="onFilterChange()">
+          <option value="all">Todos los slots</option>
+          <option value="morning">Mañana</option>
+          <option value="afternoon">Tarde</option>
+          <option value="night">Noche</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Desde</label>
+        <input type="date" id="date-from" onchange="onFilterChange()">
+      </div>
+      <div class="control-group">
+        <label>Hasta</label>
+        <input type="date" id="date-to" onchange="onFilterChange()">
+      </div>
+      <button class="btn-load" onclick="loadData()">↺ Recargar datos</button>
+    </div>
+
+    <!-- SCORECARDS -->
+    <div class="scorecards" id="scorecards">
+      <div class="scorecard alert">
+        <div class="scorecard-label">Ideación media</div>
+        <div class="scorecard-value" id="sc-ideation">—</div>
+        <div class="scorecard-sub">umbral &gt; 5</div>
+      </div>
+      <div class="scorecard">
+        <div class="scorecard-label">Estrés medio</div>
+        <div class="scorecard-value" id="sc-stress">—</div>
+        <div class="scorecard-sub">escala 0–10</div>
+      </div>
+      <div class="scorecard">
+        <div class="scorecard-label">Ánimo medio</div>
+        <div class="scorecard-value" id="sc-mood">—</div>
+        <div class="scorecard-sub">escala 0–10</div>
+      </div>
+      <div class="scorecard">
+        <div class="scorecard-label">Sueño medio</div>
+        <div class="scorecard-value" id="sc-sleep">—</div>
+        <div class="scorecard-sub">escala 0–10</div>
+      </div>
+      <div class="scorecard">
+        <div class="scorecard-label">Adherencia</div>
+        <div class="scorecard-value" id="sc-adherence">—</div>
+        <div class="scorecard-sub">slots completados</div>
+      </div>
+      <div class="scorecard">
+        <div class="scorecard-label">Registros</div>
+        <div class="scorecard-value" id="sc-records">—</div>
+        <div class="scorecard-sub">evaluaciones</div>
+      </div>
+    </div>
+
+    <!-- GRÁFICO PRINCIPAL -->
+    <div class="chart-section">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Evolución de puntuaciones</div>
+          <div class="chart-sub">Media diaria · selecciona las variables a mostrar</div>
+        </div>
+        <div class="var-selector">
+          <button class="var-btn active" data-var="ideation"   onclick="toggleVar(this)">Ideación</button>
+          <button class="var-btn active" data-var="stress"     onclick="toggleVar(this)">Estrés</button>
+          <button class="var-btn"        data-var="mood"       onclick="toggleVar(this)">Ánimo</button>
+          <button class="var-btn"        data-var="sleep"      onclick="toggleVar(this)">Sueño</button>
+          <button class="var-btn"        data-var="entrapment" onclick="toggleVar(this)">Entrapment</button>
+          <button class="var-btn"        data-var="burden"     onclick="toggleVar(this)">Burden</button>
+          <button class="var-btn"        data-var="belonging"  onclick="toggleVar(this)">Belonging</button>
+          <button class="var-btn"        data-var="control"    onclick="toggleVar(this)">Control</button>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="main-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- GRÁFICO RADAR POR SLOT -->
+    <div class="chart-section">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Perfil clínico por slot</div>
+          <div class="chart-sub">Variables por franja horaria en el día seleccionado</div>
+        </div>
+        <div class="control-group" style="flex-direction:row; align-items:center; gap:10px;">
+          <label style="font-size:12px; color:#888; font-weight:500; text-transform:uppercase;">Día</label>
+          <select id="radar-day-select" onchange="renderRadarChart()" style="min-width:150px;">
+            <option value="">— selecciona —</option>
+          </select>
+        </div>
+      </div>
+      <div style="position:relative; height:360px; max-width:560px; margin:0 auto;">
+        <canvas id="radar-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- FILA INFERIOR -->
+    <div class="bottom-grid">
+
+      <!-- HEATMAP -->
+      <div class="chart-section" style="margin-bottom:0">
+        <div class="chart-title">Cumplimiento por slot y día</div>
+        <div class="chart-sub" style="margin-bottom:4px">Evaluaciones scheduled · últimos 14 días activos</div>
+        <div class="heatmap-wrap" id="heatmap-wrap">
+          <div class="loading">Cargando...</div>
+        </div>
+        <div class="heatmap-legend">
+          <div class="legend-item"><div class="legend-sq" style="background:#c8e6c9"></div>Completado</div>
+          <div class="legend-item"><div class="legend-sq" style="background:#ffcdd2"></div>No completado</div>
+          <div class="legend-item"><div class="legend-sq" style="background:#f0f0f0"></div>Sin actividad</div>
+        </div>
+      </div>
+
+      <!-- ALERTAS -->
+      <div class="chart-section" style="margin-bottom:0">
+        <div class="chart-title">Alertas por paciente</div>
+        <div class="chart-sub" style="margin-bottom:12px">Basado en ideación media e ideación máxima</div>
+        <table class="patients-table">
+          <thead>
+            <tr>
+              <th>Paciente</th>
+              <th>Id. media</th>
+              <th>Id. máx</th>
+              <th>Nivel</th>
+            </tr>
+          </thead>
+          <tbody id="alerts-table">
+            <tr><td colspan="4" class="loading">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TABLA DETALLADA -->
+    <div class="chart-section" style="margin-top:20px;">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Registros detallados</div>
+          <div class="chart-sub">Todos los registros del paciente seleccionado · ordenados por fecha</div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <label style="font-size:12px; color:#888;">Mostrar:</label>
+          <select id="detail-view" onchange="renderDetailTable(getFilteredRows())" style="min-width:120px; font-size:13px; padding:6px 10px;">
+            <option value="scores">Puntuaciones</option>
+            <option value="ia">Análisis IA</option>
+          </select>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table id="detail-table" style="width:100%; border-collapse:collapse; font-size:13px;">
+          <thead id="detail-thead"></thead>
+          <tbody id="detail-tbody">
+            <tr><td colspan="10" class="loading">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="detail-pagination" style="display:flex; justify-content:center; gap:8px; margin-top:16px; font-size:13px;"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+const SHEET_ID       = '1u2TZAhikb5tS_ijVdRrYkxjl2_LWrwtAkm05o8RXCxM';
+const SHEET_NAME     = 'Hoja 1';
+const SHEET_PATIENTS = 'Pacientes';
+const CLIENT_ID      = '889272379169-3ocehqb1urug88gkr3qp02jg2aqkla33.apps.googleusercontent.com';
+const SCOPES         = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+
+const COLORS = {
+  ideation:   '#e53935',
+  stress:     '#1976d2',
+  mood:       '#388e3c',
+  sleep:      '#f57c00',
+  entrapment: '#7b1fa2',
+  burden:     '#00838f',
+  belonging:  '#c2185b',
+  control:    '#5d4037',
+};
+
+const SLOTS = ['morning', 'afternoon', 'night'];
+const SLOT_LABELS = { morning: 'Mañana', afternoon: 'Tarde', night: 'Noche' };
+
+let accessToken  = null;
+let tokenClient  = null;
+let allRows      = [];
+// patientMeta: { [email]: { firstDay: 'YYYY-MM-DD', lastDay: 'YYYY-MM-DD' | null } }
+let patientMeta  = {};
+let mainChart    = null;
+let activeVars   = new Set(['ideation', 'stress']);
+
+// ─── UTILIDADES DE FECHA ────────────────────────────────
+function todayStr() {
+  return new Date().toISOString().substring(0, 10);
+}
+
+function yesterdayStr() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().substring(0, 10);
+}
+
+// Normaliza fechas que pueden venir como "01/01/2026" o "2026-01-01"
+function normalizeDate(raw) {
+  if (!raw) return null;
+  raw = raw.trim();
+  // formato DD/MM/YYYY
+  const dmyMatch = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dmyMatch) {
+    const [, d, m, y] = dmyMatch;
+    return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+  }
+  // formato YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  return null;
+}
+
+// Número de días entre dos fechas YYYY-MM-DD (inclusive ambos extremos)
+function daysBetween(from, to) {
+  const a = new Date(from + 'T00:00:00');
+  const b = new Date(to   + 'T00:00:00');
+  return Math.round((b - a) / 86400000) + 1;
+}
+
+// Genera array de fechas YYYY-MM-DD entre from y to inclusive
+function dateRange(from, to) {
+  const result = [];
+  const cur = new Date(from + 'T00:00:00');
+  const end = new Date(to   + 'T00:00:00');
+  while (cur <= end) {
+    result.push(cur.toISOString().substring(0, 10));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return result;
+}
+
+// ─── AUTH ───────────────────────────────────────────────
+function handleCredential(response) {
+  const payload = parseJwt(response.credential);
+  document.getElementById('user-email').textContent = payload.email;
+  initTokenClient();
+}
+
+function parseJwt(token) {
+  const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+  return JSON.parse(atob(base64));
+}
+
+function initTokenClient() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (tokenResponse) => {
+      if (tokenResponse.error) { showError('Error al obtener acceso: ' + tokenResponse.error); return; }
+      accessToken = tokenResponse.access_token;
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      loadData();
+    },
+  });
+  tokenClient.requestAccessToken({ prompt: '' });
+}
+
+function logout() {
+  accessToken = null; tokenClient = null; allRows = []; patientMeta = {};
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  if (mainChart) { mainChart.destroy(); mainChart = null; }
+}
+
+// ─── CARGA DE DATOS ─────────────────────────────────────
+async function fetchSheet(sheetName) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(sheetName)}`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (res.status === 401 || res.status === 403) { showReconnectBanner(); return null; }
+  if (!res.ok) throw new Error(`HTTP ${res.status} en hoja "${sheetName}"`);
+  const data = await res.json();
+  const [headers, ...rows] = data.values || [];
+  if (!headers) return [];
+  return rows.map(r => {
+    const obj = {};
+    headers.forEach((h, i) => obj[h.trim()] = (r[i] ?? '').trim());
+    return obj;
+  });
+}
+
+async function loadData() {
+  if (!accessToken) return;
+  showInfo('Cargando datos...');
+  document.querySelector('.btn-load').disabled = true;
+
+  try {
+    // Carga paralela de Hoja 1 y Pacientes
+    const [rows1, rowsPacientes] = await Promise.all([
+      fetchSheet(SHEET_NAME),
+      fetchSheet(SHEET_PATIENTS),
+    ]);
+
+    if (rows1 === null) return; // token expirado, ya se mostró banner
+
+    allRows = (rows1 || []).filter(r => r.dayKey).map(r => {
+      // Normalizar dayKey a YYYY-MM-DD (puede venir como YYYY-M-D)
+      if (r.dayKey && /^\d{4}-\d{1,2}-\d{1,2}$/.test(r.dayKey.trim())) {
+        const parts = r.dayKey.trim().split('-');
+        r.dayKey = `${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
+      }
+      return r;
+    });
+
+    // Construir patientMeta desde hoja Pacientes
+    patientMeta = {};
+    (rowsPacientes || []).forEach(p => {
+      const email = (p.email || p.Email || '').trim();
+      if (!email) return;
+      const fechaFin = normalizeDate(p['fecha fin'] || p['Fecha fin'] || p['FechaFin'] || '');
+      patientMeta[email] = { lastDay: fechaFin };
+    });
+
+    // Calcular firstDay por paciente a partir de allRows
+    allRows.forEach(r => {
+      const pid = r.email || r.userRef || '';
+      if (!pid) return;
+      const day = r.dayKey ? r.dayKey.substring(0, 10) : null;
+      if (!day) return;
+      if (!patientMeta[pid]) patientMeta[pid] = { lastDay: null };
+      if (!patientMeta[pid].firstDay || day < patientMeta[pid].firstDay) {
+        patientMeta[pid].firstDay = day;
+      }
+    });
+
+    populatePatients();
+    setDefaultDates();
+    hideMessages();
+    renderAll();
+  } catch (e) {
+    showError('Error al leer datos: ' + e.message);
+  } finally {
+    document.querySelector('.btn-load').disabled = false;
+  }
+}
+
+function populatePatients() {
+  const sel = document.getElementById('sel-patient');
+  const current = sel.value;
+  const emails = [...new Set(allRows.map(r => r.email || r.userRef).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="all">Todos los pacientes</option>';
+  emails.forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e; opt.textContent = e;
+    sel.appendChild(opt);
+  });
+  if (emails.includes(current)) sel.value = current;
+}
+
+function setDefaultDates() {
+  const days = allRows.map(r => r.dayKey).filter(Boolean).sort();
+  if (!days.length) return;
+  const from = document.getElementById('date-from');
+  const to   = document.getElementById('date-to');
+  if (!from.value) from.value = days[0].substring(0, 10);
+  if (!to.value)   to.value   = days[days.length - 1].substring(0, 10);
+}
+
+function getFilteredRows() {
+  const patient = document.getElementById('sel-patient').value;
+  const slot    = document.getElementById('sel-slot').value;
+  const from    = document.getElementById('date-from').value;
+  const to      = document.getElementById('date-to').value;
+
+  return allRows.filter(r => {
+    const id = r.email || r.userRef || '';
+    if (patient !== 'all' && id !== patient) return false;
+    if (slot !== 'all' && r.slot !== slot) return false;
+    const day = r.dayKey ? r.dayKey.substring(0, 10) : '';
+    if (from && day < from) return false;
+    if (to   && day > to)   return false;
+    return true;
+  });
+}
+
+function onFilterChange() { renderAll(); }
+
+// ─── RENDER PRINCIPAL ───────────────────────────────────
+function renderAll() {
+  const rows = getFilteredRows();
+  renderScorecards(rows);
+  renderMainChart(rows);
+  renderHeatmap(rows);
+  populateRadarDays(rows);
+  renderRadarChart();
+  renderAlerts();
+  renderDetailTable(rows);
+}
+
+function avg(arr) {
+  const nums = arr.filter(v => v !== '' && v !== null && v !== undefined).map(Number).filter(n => !isNaN(n));
+  return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
+}
+
+// ─── SCORECARDS ─────────────────────────────────────────
+function renderScorecards(rows) {
+  ['ideation','stress','mood','sleep'].forEach(f => {
+    const a = avg(rows.map(r => r[f]));
+    document.getElementById('sc-' + f).textContent = a !== null ? a.toFixed(1) : '—';
+  });
+
+  document.getElementById('sc-records').textContent = rows.length;
+
+  // Adherencia correcta por paciente
+  const ayer = yesterdayStr();
+  const selectedPatient = document.getElementById('sel-patient').value;
+
+  const pids = selectedPatient !== 'all'
+    ? [selectedPatient]
+    : [...new Set(allRows.map(r => r.email || r.userRef).filter(Boolean))];
+
+  // Mapa de evaluaciones scheduled completadas: pid → Set de "YYYY-MM-DD_slot"
+  const completedByPid = {};
+  allRows.filter(r => r.entryType === 'scheduled').forEach(r => {
+    const pid = r.email || r.userRef || '';
+    const day = r.dayKey ? r.dayKey.substring(0, 10) : null;
+    if (!pid || !day || !r.slot) return;
+    if (!completedByPid[pid]) completedByPid[pid] = new Set();
+    completedByPid[pid].add(day + '_' + r.slot);
+  });
+
+  const adherences = pids.map(pid => {
+    const meta = patientMeta[pid] || {};
+    const firstDay = meta.firstDay || null;
+    if (!firstDay) return null;
+
+    // Límite superior: min(ayer, fechaFin)
+    let lastActive = ayer;
+    if (meta.lastDay && meta.lastDay < ayer) lastActive = meta.lastDay;
+
+    if (lastActive < firstDay) return null; // aún no hay días completos
+
+    const totalDays = daysBetween(firstDay, lastActive);
+    const totalExpected = totalDays * 3;
+
+    const completed = completedByPid[pid]
+      ? [...completedByPid[pid]].filter(k => {
+          const day = k.substring(0, 10);
+          return day >= firstDay && day <= lastActive;
+        }).length
+      : 0;
+
+    return totalExpected > 0 ? completed / totalExpected : null;
+  }).filter(v => v !== null);
+
+  const meanAdh = adherences.length
+    ? adherences.reduce((a, b) => a + b, 0) / adherences.length
+    : null;
+
+  document.getElementById('sc-adherence').textContent =
+    meanAdh !== null ? Math.round(meanAdh * 100) + '%' : '—';
+
+  const idAvg = avg(rows.map(r => r.ideation));
+  document.querySelector('#scorecards .scorecard').classList.toggle('alert', idAvg !== null && idAvg > 5);
+}
+
+// ─── GRÁFICO PRINCIPAL ──────────────────────────────────
+function renderMainChart(rows) {
+  const byDay = {};
+  rows.forEach(r => {
+    const day = r.dayKey ? r.dayKey.substring(0, 10) : 'sin fecha';
+    if (!byDay[day]) byDay[day] = {};
+    Object.keys(COLORS).forEach(v => {
+      if (!byDay[day][v]) byDay[day][v] = [];
+      if (r[v] !== '' && r[v] !== undefined) byDay[day][v].push(Number(r[v]));
+    });
+  });
+
+  const labels   = Object.keys(byDay).sort();
+  const datasets = [];
+
+  activeVars.forEach(v => {
+    datasets.push({
+      label: v.charAt(0).toUpperCase() + v.slice(1),
+      data: labels.map(d => {
+        const vals = byDay[d][v] || [];
+        return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+      }),
+      borderColor: COLORS[v],
+      backgroundColor: COLORS[v] + '22',
+      tension: 0.3, pointRadius: 4, pointHoverRadius: 6,
+      spanGaps: true, borderWidth: 2,
+    });
+  });
+
+  if (mainChart) mainChart.destroy();
+  const ctx = document.getElementById('main-chart').getContext('2d');
+  mainChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 12 } } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y !== null ? ctx.parsed.y.toFixed(2) : 'N/D'}` } }
+      },
+      scales: {
+        x: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } } },
+        y: { min: 0, max: 10, grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+// ─── HEATMAP ────────────────────────────────────────────
+function renderHeatmap(rows) {
+  const wrap = document.getElementById('heatmap-wrap');
+  const ayer = yesterdayStr();
+  const selectedPatient = document.getElementById('sel-patient').value;
+
+  // Construir Set de combinaciones completadas (scheduled) en las filas filtradas
+  // clave: "YYYY-MM-DD_slot"
+  const completedSet = new Set();
+  rows.filter(r => r.entryType === 'scheduled').forEach(r => {
+    const day = r.dayKey ? r.dayKey.substring(0, 10) : null;
+    if (day && r.slot) completedSet.add(day + '_' + r.slot);
+  });
+
+  // Determinar rango de días a mostrar (últimos 14 días activos del paciente)
+  // Si hay un paciente seleccionado usamos su meta; si son todos, usamos los días con datos
+  let daysToShow = [];
+
+  if (selectedPatient !== 'all') {
+    const meta = patientMeta[selectedPatient] || {};
+    const firstDay = meta.firstDay || null;
+    if (!firstDay) { wrap.innerHTML = '<div class="loading">Sin datos para este paciente</div>'; return; }
+    let lastActive = ayer;
+    if (meta.lastDay && meta.lastDay < ayer) lastActive = meta.lastDay;
+    if (lastActive < firstDay) { wrap.innerHTML = '<div class="loading">Sin días completos aún</div>'; return; }
+    const allDays = dateRange(firstDay, lastActive);
+    daysToShow = allDays.slice(-14); // últimos 14
+  } else {
+    // Todos los pacientes: mostrar días que aparecen en las filas filtradas, últimos 14
+    const daySet = new Set(rows.map(r => r.dayKey ? r.dayKey.substring(0,10) : null).filter(Boolean));
+    daysToShow = [...daySet].sort().filter(d => d <= ayer).slice(-14);
+    if (!daysToShow.length) { wrap.innerHTML = '<div class="loading">Sin datos</div>'; return; }
+  }
+
+  // Construir tabla
+  let html = '<table class="heatmap-table"><thead><tr>';
+  html += '<th class="day-col">Día</th>';
+  SLOTS.forEach(s => { html += `<th>${SLOT_LABELS[s]}</th>`; });
+  html += '</tr></thead><tbody>';
+
+  daysToShow.forEach(day => {
+    html += `<tr><td class="heatmap-day">${day.slice(5)}</td>`;
+    SLOTS.forEach(slot => {
+      const key = day + '_' + slot;
+      const isDone   = completedSet.has(key);
+      const isPast   = day <= ayer;
+
+      let cls, label;
+      if (isDone) {
+        cls = 'done'; label = '✓';
+      } else if (isPast) {
+        cls = 'missed'; label = '✗';
+      } else {
+        cls = 'future'; label = '·';
+      }
+
+      // Si el paciente está seleccionado, marcar como inactivo si está fuera de su periodo
+      if (selectedPatient !== 'all') {
+        const meta = patientMeta[selectedPatient] || {};
+        const firstDay = meta.firstDay || day;
+        const lastActive = meta.lastDay && meta.lastDay < ayer ? meta.lastDay : ayer;
+        if (day < firstDay || day > lastActive) {
+          cls = 'inactive'; label = '—';
+        }
+      }
+
+      html += `<td class="heatmap-cell ${cls}" title="${day} · ${SLOT_LABELS[slot]}">${label}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+// ─── ALERTAS ────────────────────────────────────────────
+function renderAlerts() {
+  const byPatient = {};
+  allRows.forEach(r => {
+    const id = r.email || r.userRef || 'desconocido';
+    if (!byPatient[id]) byPatient[id] = [];
+    if (r.ideation !== '' && r.ideation !== undefined) byPatient[id].push(Number(r.ideation));
+  });
+
+  const tbody = document.getElementById('alerts-table');
+  tbody.innerHTML = '';
+
+  Object.entries(byPatient)
+    .sort((a, b) => {
+      const aAvg = a[1].length ? a[1].reduce((x,y)=>x+y,0)/a[1].length : 0;
+      const bAvg = b[1].length ? b[1].reduce((x,y)=>x+y,0)/b[1].length : 0;
+      return bAvg - aAvg;
+    })
+    .forEach(([patient, vals]) => {
+      const mean = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+      const max  = vals.length ? Math.max(...vals) : 0;
+      let level, cls;
+      if (mean > 5 || max >= 8)      { level = 'ALTO';     cls = 'alto'; }
+      else if (mean > 3 || max >= 5) { level = 'MODERADO'; cls = 'moderado'; }
+      else                           { level = 'BAJO';     cls = 'bajo'; }
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-size:12px; color:#555; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${patient}">${patient}</td>
+        <td style="font-size:13px; font-weight:500;">${mean.toFixed(1)}</td>
+        <td style="font-size:13px;">${max.toFixed(1)}</td>
+        <td><span class="badge ${cls}">${level}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  if (!Object.keys(byPatient).length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="loading">Sin datos</td></tr>';
+  }
+}
+
+// ─── RADAR CHART ────────────────────────────────────────
+const RADAR_VARS   = ['ideation','stress','mood','sleep','entrapment','burden','belonging','control'];
+const RADAR_LABELS = ['Ideación','Estrés','Ánimo','Sueño','Entrapment','Burden','Belonging','Control'];
+const SLOT_COLORS  = {
+  morning:   { border: '#f57c00', bg: 'rgba(245,124,0,0.15)' },
+  afternoon: { border: '#1976d2', bg: 'rgba(25,118,210,0.15)' },
+  night:     { border: '#6a1b9a', bg: 'rgba(106,27,154,0.15)' },
+};
+let radarChart = null;
+
+function populateRadarDays(rows) {
+  const sel = document.getElementById('radar-day-select');
+  const current = sel.value;
+  const days = [...new Set(rows.map(r => r.dayKey ? r.dayKey.substring(0,10) : null).filter(Boolean))].sort().reverse();
+  sel.innerHTML = '<option value="">— selecciona —</option>';
+  days.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d; opt.textContent = d;
+    sel.appendChild(opt);
+  });
+  // Seleccionar el día más reciente por defecto
+  if (days.length) {
+    sel.value = days.includes(current) ? current : days[0];
+  }
+}
+
+function renderRadarChart() {
+  const day = document.getElementById('radar-day-select').value;
+  const canvas = document.getElementById('radar-chart');
+
+  if (radarChart) { radarChart.destroy(); radarChart = null; }
+  if (!day) return;
+
+  const rows = getFilteredRows().filter(r =>
+    r.dayKey && r.dayKey.substring(0,10) === day && r.entryType === 'scheduled'
+  );
+
+  // Agrupar por slot — si hay varios registros del mismo slot, hacer media
+  const bySlot = {};
+  rows.forEach(r => {
+    if (!r.slot) return;
+    if (!bySlot[r.slot]) bySlot[r.slot] = { counts: {}, sums: {} };
+    RADAR_VARS.forEach(v => {
+      const n = r[v] !== '' && r[v] !== undefined ? parseFloat(r[v]) : null;
+      if (n !== null && !isNaN(n)) {
+        bySlot[r.slot].sums[v] = (bySlot[r.slot].sums[v] || 0) + n;
+        bySlot[r.slot].counts[v] = (bySlot[r.slot].counts[v] || 0) + 1;
+      }
+    });
+  });
+
+  if (!Object.keys(bySlot).length) {
+    canvas.parentElement.innerHTML = '<div class="loading">Sin datos scheduled para este día</div>';
+    return;
+  }
+
+  const datasets = SLOTS.filter(s => bySlot[s]).map(slot => {
+    const data = RADAR_VARS.map(v => {
+      const s = bySlot[slot].sums[v];
+      const c = bySlot[slot].counts[v];
+      return (s !== undefined && c) ? s / c : null;
+    });
+    return {
+      label: SLOT_LABELS[slot],
+      data,
+      borderColor: SLOT_COLORS[slot].border,
+      backgroundColor: SLOT_COLORS[slot].bg,
+      borderWidth: 2,
+      pointBackgroundColor: SLOT_COLORS[slot].border,
+      pointRadius: 4,
+      spanGaps: true,
+    };
+  });
+
+  radarChart = new Chart(canvas, {
+    type: 'radar',
+    data: { labels: RADAR_LABELS, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        r: {
+          min: 0, max: 10,
+          ticks: { stepSize: 2, font: { size: 10 }, color: '#aaa', backdropColor: 'transparent' },
+          grid: { color: '#e8e8e8' },
+          angleLines: { color: '#e8e8e8' },
+          pointLabels: { font: { size: 12 }, color: '#555' },
+        }
+      },
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 12 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.r !== null ? ctx.parsed.r.toFixed(1) : 'N/D'}`
+          }
+        }
+      }
+    }
+  });
+}
+
+// ─── TOGGLE VARIABLES ───────────────────────────────────
+function toggleVar(btn) {
+  const v = btn.dataset.var;
+  if (activeVars.has(v)) {
+    if (activeVars.size === 1) return;
+    activeVars.delete(v);
+    btn.classList.remove('active');
+  } else {
+    activeVars.add(v);
+    btn.classList.add('active');
+  }
+  renderMainChart(getFilteredRows());
+}
+
+// ─── TABLA DETALLADA ────────────────────────────────────
+let detailPage = 0;
+const DETAIL_PAGE_SIZE = 15;
+let detailRows = [];
+
+function renderDetailTable(rows) {
+  detailRows = [...rows].sort((a, b) => {
+    const da = a.dayKey || ''; const db = b.dayKey || '';
+    if (da !== db) return db.localeCompare(da);
+    const slotOrder = { morning: 0, afternoon: 1, night: 2 };
+    return (slotOrder[a.slot] ?? 3) - (slotOrder[b.slot] ?? 3);
+  });
+  detailPage = 0;
+  renderDetailPage();
+}
+
+function renderDetailPage() {
+  const view  = document.getElementById('detail-view').value;
+  const thead = document.getElementById('detail-thead');
+  const tbody = document.getElementById('detail-tbody');
+  const start = detailPage * DETAIL_PAGE_SIZE;
+  const pageRows = detailRows.slice(start, start + DETAIL_PAGE_SIZE);
+
+  if (view === 'scores') {
+    thead.innerHTML = `<tr>
+      <th class="detail-th">Fecha</th><th class="detail-th">Slot</th><th class="detail-th">Tipo</th>
+      <th class="detail-th">Ideación</th><th class="detail-th">Estrés</th><th class="detail-th">Ánimo</th>
+      <th class="detail-th">Sueño</th><th class="detail-th">Entrapment</th>
+      <th class="detail-th">Burden</th><th class="detail-th">Belonging</th><th class="detail-th">Control</th>
+    </tr>`;
+    tbody.innerHTML = pageRows.map(r => {
+      const slotCls = 'slot-' + (r.slot || 'extra');
+      return `<tr class="detail-tr">
+        <td class="detail-td" style="white-space:nowrap; color:#555;">${r.dayKey || '—'}</td>
+        <td class="detail-td"><span class="slot-badge ${slotCls}">${r.slot || '—'}</span></td>
+        <td class="detail-td" style="color:#999; font-size:11px;">${r.entryType || '—'}</td>
+        ${['ideation','stress','mood','sleep','entrapment','burden','belonging','control'].map(f => {
+          const v = r[f];
+          const n = v !== '' && v !== undefined ? parseFloat(v) : null;
+          let cls = '';
+          if (n !== null) {
+            if (f === 'ideation' && n >= 5) cls = 'num-high';
+            else if (f === 'ideation' && n >= 3) cls = 'num-mid';
+            else if ((f === 'mood' || f === 'belonging') && n >= 7) cls = 'num-ok';
+            else if ((f === 'mood' || f === 'belonging') && n <= 3) cls = 'num-high';
+          }
+          return `<td class="detail-td"><span class="num-cell ${cls}">${n !== null ? n : '—'}</span></td>`;
+        }).join('')}
+      </tr>`;
+    }).join('') || '<tr><td colspan="11" class="loading">Sin registros</td></tr>';
+
+  } else {
+    thead.innerHTML = `<tr>
+      <th class="detail-th">Fecha</th><th class="detail-th">Slot</th>
+      <th class="detail-th">Tono</th><th class="detail-th">Temas</th>
+      <th class="detail-th">Lenguaje riesgo</th><th class="detail-th">Lenguaje protector</th>
+      <th class="detail-th">Coherencia</th>
+    </tr>`;
+    tbody.innerHTML = pageRows.map(r => `<tr class="detail-tr">
+      <td class="detail-td" style="white-space:nowrap; color:#555;">${r.dayKey || '—'}</td>
+      <td class="detail-td"><span class="slot-badge slot-${r.slot || 'extra'}">${r.slot || '—'}</span></td>
+      <td class="detail-td" style="color:#555;">${r.ia_tone || '—'}</td>
+      <td class="detail-td" style="max-width:200px; color:#555;">${r.ia_themes || '—'}</td>
+      <td class="detail-td" style="max-width:180px; color:${r.ia_risk_language && r.ia_risk_language !== '—' ? '#c62828' : '#aaa'};">${r.ia_risk_language || '—'}</td>
+      <td class="detail-td" style="max-width:180px; color:${r.ia_protective_language && r.ia_protective_language !== '—' ? '#2e7d32' : '#aaa'};">${r.ia_protective_language || '—'}</td>
+      <td class="detail-td" style="color:#555;">${r.ia_coherence || '—'}</td>
+    </tr>`).join('') || '<tr><td colspan="7" class="loading">Sin registros con análisis IA</td></tr>';
+  }
+
+  // Paginación
+  const totalPages = Math.ceil(detailRows.length / DETAIL_PAGE_SIZE);
+  const pag = document.getElementById('detail-pagination');
+  if (totalPages <= 1) { pag.innerHTML = ''; return; }
+  let html = '';
+  for (let i = 0; i < totalPages; i++) {
+    html += `<button class="page-btn ${i === detailPage ? 'active' : ''}" onclick="detailPage=${i}; renderDetailPage();">${i+1}</button>`;
+  }
+  pag.innerHTML = html;
+}
+
+// ─── BANNERS ────────────────────────────────────────────
+function showReconnectBanner() {
+  const el = document.getElementById('error-banner');
+  el.innerHTML = 'Sesión caducada. <button onclick="reconnect()" style="margin-left:8px; padding:4px 12px; background:#c62828; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px;">Reconectar</button>';
+  el.style.display = 'block';
+  document.getElementById('info-banner').style.display = 'none';
+}
+function reconnect() {
+  if (tokenClient) tokenClient.requestAccessToken({ prompt: '' });
+  else { document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app').style.display = 'none'; }
+}
+function showError(msg) {
+  const el = document.getElementById('error-banner');
+  el.textContent = msg; el.style.display = 'block';
+  document.getElementById('info-banner').style.display = 'none';
+}
+function showInfo(msg) {
+  const el = document.getElementById('info-banner');
+  el.textContent = msg; el.style.display = 'block';
+  document.getElementById('error-banner').style.display = 'none';
+}
+function hideMessages() {
+  document.getElementById('error-banner').style.display = 'none';
+  document.getElementById('info-banner').style.display = 'none';
+}
+</script>
+</body>
+</html>
