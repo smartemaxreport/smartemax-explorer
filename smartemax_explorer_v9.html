@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartEmax Explorer</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; }
+
+    #login-screen {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh; gap: 24px;
+    }
+    .login-card {
+      background: white; border-radius: 16px; padding: 48px 40px; text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08); max-width: 400px; width: 90%;
+    }
+    .login-logo { font-size: 40px; margin-bottom: 8px; }
+    .login-title { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+    .login-sub { font-size: 14px; color: #666; margin-bottom: 32px; }
+
+    #app { display: none; }
+
+    header {
+      background: white; border-bottom: 1px solid #e8e8e8;
+      padding: 0 24px; display: flex; align-items: center; justify-content: space-between;
+      height: 56px; position: sticky; top: 0; z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-logo { font-size: 18px; font-weight: 600; color: #1a1a1a; }
+    .header-badge { font-size: 11px; background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .user-info { font-size: 13px; color: #666; }
+    .btn-logout { font-size: 12px; padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px; background: white; cursor: pointer; color: #666; }
+    .btn-logout:hover { background: #f5f5f5; }
+
+    main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+    .controls {
+      background: white; border-radius: 12px; padding: 20px 24px;
+      display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;
+      margin-bottom: 20px; border: 1px solid #e8e8e8;
+    }
+    .control-group { display: flex; flex-direction: column; gap: 6px; }
+    .control-group label { font-size: 12px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.3px; }
+    select, input[type="date"] {
+      padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px;
+      font-size: 14px; background: white; color: #1a1a1a; min-width: 180px;
+    }
+    select:focus, input:focus { outline: none; border-color: #4CAF50; }
+    .btn-load {
+      padding: 8px 20px; background: #2e7d32; color: white; border: none;
+      border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;
+    }
+    .btn-load:hover { background: #1b5e20; }
+    .btn-load:disabled { background: #ccc; cursor: not-allowed; }
+
+    .scorecards {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px; margin-bottom: 20px;
+    }
+    .scorecard {
+      background: white; border-radius: 10px; padding: 16px;
+      border: 1px solid #e8e8e8; text-align: center;
+    }
+    .scorecard.alert { background: #fff3f3; border-color: #ffcdd2; }
+    .scorecard-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px; }
+    .scorecard-value { font-size: 28px; font-weight: 600; color: #1a1a1a; }
+    .scorecard.alert .scorecard-value { color: #c62828; }
+    .scorecard-sub { font-size: 11px; color: #aaa; margin-top: 4px; }
+
+    .chart-section {
+      background: white; border-radius: 12px; padding: 24px;
+      border: 1px solid #e8e8e8; margin-bottom: 20px;
+    }
+    .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+    .chart-title { font-size: 16px; font-weight: 600; }
+    .chart-sub { font-size: 13px; color: #888; margin-top: 2px; }
+
+    .var-selector { display: flex; gap: 8px; flex-wrap: wrap; }
+    .var-btn {
+      padding: 5px 12px; border-radius: 20px; border: 1.5px solid #ddd;
+      font-size: 12px; cursor: pointer; background: white; transition: all 0.15s; font-weight: 500;
+    }
+    .var-btn.active { color: white; border-color: transparent; }
+    .var-btn[data-var="ideation"].active  { background: #e53935; border-color: #e53935; }
+    .var-btn[data-var="stress"].active    { background: #1976d2; border-color: #1976d2; }
+    .var-btn[data-var="mood"].active      { background: #388e3c; border-color: #388e3c; }
+    .var-btn[data-var="sleep"].active     { background: #f57c00; border-color: #f57c00; }
+    .var-btn[data-var="entrapment"].active{ background: #7b1fa2; border-color: #7b1fa2; }
+    .var-btn[data-var="burden"].active    { background: #00838f; border-color: #00838f; }
+    .var-btn[data-var="belonging"].active { background: #c2185b; border-color: #c2185b; }
+    .var-btn[data-var="control"].active   { background: #5d4037; border-color: #5d4037; }
+
+    .chart-canvas-wrap { position: relative; height: 320px; }
+
+    .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 700px) { .bottom-grid { grid-template-columns: 1fr; } }
+
+    /* ── HEATMAP ── */
+    .heatmap-wrap { overflow-x: auto; margin-top: 8px; }
+    .heatmap-table { border-collapse: separate; border-spacing: 4px; min-width: 100%; }
+    .heatmap-table th {
+      font-size: 11px; color: #888; font-weight: 500; text-transform: uppercase;
+      padding: 4px 6px; text-align: center;
+    }
+    .heatmap-table th.day-col { text-align: left; min-width: 64px; }
+    .heatmap-cell {
+      width: 44px; height: 32px; border-radius: 6px; text-align: center;
+      vertical-align: middle; font-size: 10px; font-weight: 600; cursor: default;
+    }
+    .heatmap-cell.done     { background: #c8e6c9; color: #1b5e20; }
+    .heatmap-cell.missed   { background: #ffcdd2; color: #b71c1c; }
+    .heatmap-cell.inactive { background: #f0f0f0; color: #bbb; }
+    .heatmap-cell.future   { background: #f9f9f9; color: #ccc; }
+    .heatmap-day { font-size: 12px; color: #666; padding: 4px 6px; vertical-align: middle; }
+
+    .heatmap-legend { display: flex; gap: 14px; margin-top: 12px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #666; }
+    .legend-sq { width: 14px; height: 14px; border-radius: 3px; }
+
+    /* ── ALERTAS ── */
+    .patients-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+    .patients-table th { text-align: left; padding: 8px 10px; font-size: 11px; color: #888; text-transform: uppercase; border-bottom: 1px solid #eee; }
+    .patients-table td { padding: 10px; border-bottom: 1px solid #f5f5f5; }
+    .patients-table tr:last-child td { border-bottom: none; }
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+    .badge.alto     { background: #ffebee; color: #c62828; }
+    .badge.moderado { background: #fff8e1; color: #e65100; }
+    .badge.bajo     { background: #e8f5e9; color: #2e7d32; }
+
+    .loading { text-align: center; padding: 40px; color: #888; font-size: 14px; }
+    .detail-th { text-align:left; padding:8px 10px; font-size:11px; color:#888; text-transform:uppercase; border-bottom:1.5px solid #e8e8e8; white-space:nowrap; }
+    .detail-td { padding:9px 10px; border-bottom:0.5px solid #f0f0f0; vertical-align:top; }
+    .detail-tr:hover td { background:#fafafa; }
+    .slot-badge { font-size:10px; padding:2px 7px; border-radius:8px; font-weight:500; }
+    .slot-morning   { background:#fff8e1; color:#e65100; }
+    .slot-afternoon { background:#e3f2fd; color:#1565c0; }
+    .slot-night     { background:#f3e5f5; color:#6a1b9a; }
+    .slot-extra     { background:#e8f5e9; color:#2e7d32; }
+    .page-btn { padding:5px 10px; border:1px solid #ddd; border-radius:6px; background:white; cursor:pointer; font-size:12px; }
+    .page-btn.active { background:#2e7d32; color:white; border-color:#2e7d32; }
+    .page-btn:hover:not(.active) { background:#f5f5f5; }
+    .num-cell { font-size:14px; font-weight:500; }
+    .num-high { color:#c62828; }
+    .num-mid  { color:#e65100; }
+    .num-ok   { color:#2e7d32; }
+    .error-msg { background: #ffebee; color: #c62828; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+    .info-msg  { background: #e8f5e9; color: #2e7d32; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+
+    /* ── FLAG BADGES ── */
+    .flag-badge {
+      display: inline-block; font-size: 11px; padding: 2px 7px;
+      border-radius: 8px; font-weight: 500; margin: 2px 2px 2px 0;
+      white-space: nowrap;
+    }
+    .flag-id-alta        { background: #ffebee; color: #c62828; }
+    .flag-escalada       { background: #fff8e1; color: #e65100; }
+    .flag-id-persist     { background: #fce4ec; color: #880e4f; }
+    .flag-stress-persist { background: #e3f2fd; color: #0d47a1; }
+    .flag-sin-control    { background: #f3e5f5; color: #4a148c; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🧠</div>
+    <div class="login-title">SmartEmax Explorer</div>
+    <div class="login-sub">Herramienta de exploración clínica EMA.<br>Inicia sesión con tu cuenta de Google.</div>
+    <div id="g_id_onload"
+      data-client_id="889272379169-3ocehqb1urug88gkr3qp02jg2aqkla33.apps.googleusercontent.com"
+      data-callback="handleCredential"
+      data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin"
+      data-type="standard" data-size="large" data-theme="outline"
+      data-text="signin_with" data-shape="rectangular" data-locale="es" data-width="280">
+    </div>
+    <div id="login-error" style="margin-top:16px; font-size:13px; color:#c62828; display:none;"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="header-left">
+      <span class="header-logo">🧠 SmartEmax Explorer</span>
+      <span class="header-badge">Exploración clínica</span>
+    </div>
+    <div class="header-right">
+      <span class="user-info" id="user-email"></span>
+      <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="error-banner" class="error-msg" style="display:none;"></div>
+    <div id="info-banner"  class="info-msg"  style="display:none;"></div>
+
+    <!-- CONTROLES -->
+    <div class="controls">
+      <div class="control-group">
+        <label>Paciente</label>
+        <select id="sel-patient" onchange="onFilterChange()">
+          <option value="all">Todos los pacientes</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Slot</label>
+        <select id="sel-slot" onchange="onFilterChange()">
+          <option value="all">Todos los slots</option>
+          <option value="morning">Mañana</option>
+          <option value="afternoon">Tarde</option>
+          <option value="night">Noche</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Desde</label>
+        <input type="date" id="date-from" onchange="onFilterChange()">
+      </div>
+      <div class="control-group">
+        <label>Hasta</label>
+        <input type="date" id="date-to" onchange="onFilterChange()">
+      </div>
+      <button class="btn-load" onclick="loadData()">↺ Recargar datos</button>
+    </div>
+
+    <!-- SCORECARDS -->
+    <div class="scorecards" id="scorecards">
+      <div class="scorecard alert">
+        <div class="scorecard-label">Ideación media</div>
+        <div class="scorecard-value" id="sc-ideation">—</div>
+        <div class="scorecard-sub">umbral &gt; 5</div>
+      </div>
+      <div class="scorecard">
+        <div class="scorecard-label">Estrés medio</div>
+        <div class="scorecard-value" id="sc-stress">—</div>
+        <div class="scorecard-sub">escala 0–10</div>
+      </div>
+      <div class="scorecard">
+        <div class="scorecard-label">Ánimo medio</div>
+        <div class="scorecard-value" id="sc-mood">—</div>
+        <div class="scorecard-sub">escala 0–10</div>
+      </div>
+      <div class="scorecard">
+        <div class="scorecard-label">Sueño medio</div>
+        <div class="scorecard-value" id="sc-sleep">—</div>
+        <div class="scorecard-sub">escala 0–10</div>
+      </div>
+      <div class="scorecard">
+        <div class="scorecard-label">Adherencia</div>
+        <div class="scorecard-value" id="sc-adherence">—</div>
+        <div class="scorecard-sub">slots completados</div>
+      </div>
+      <div class="scorecard">
+        <div class="scorecard-label">Registros</div>
+        <div class="scorecard-value" id="sc-records">—</div>
+        <div class="scorecard-sub">evaluaciones</div>
+      </div>
+    </div>
+
+    <!-- GRÁFICO PRINCIPAL -->
+    <div class="chart-section">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Evolución de puntuaciones</div>
+          <div class="chart-sub">Media diaria · selecciona las variables a mostrar</div>
+        </div>
+        <div class="var-selector">
+          <button class="var-btn active" data-var="ideation"   onclick="toggleVar(this)">Ideación</button>
+          <button class="var-btn active" data-var="stress"     onclick="toggleVar(this)">Estrés</button>
+          <button class="var-btn"        data-var="mood"       onclick="toggleVar(this)">Ánimo</button>
+          <button class="var-btn"        data-var="sleep"      onclick="toggleVar(this)">Sueño</button>
+          <button class="var-btn"        data-var="entrapment" onclick="toggleVar(this)">Entrapment</button>
+          <button class="var-btn"        data-var="burden"     onclick="toggleVar(this)">Burden</button>
+          <button class="var-btn"        data-var="belonging"  onclick="toggleVar(this)">Belonging</button>
+          <button class="var-btn"        data-var="control"    onclick="toggleVar(this)">Control</button>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="main-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- GRÁFICO RADAR POR SLOT -->
+    <div class="chart-section">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Perfil clínico por slot</div>
+          <div class="chart-sub">Variables por franja horaria en el día seleccionado</div>
+        </div>
+        <div class="control-group" style="flex-direction:row; align-items:center; gap:10px;">
+          <label style="font-size:12px; color:#888; font-weight:500; text-transform:uppercase;">Día</label>
+          <select id="radar-day-select" onchange="renderRadarChart()" style="min-width:150px;">
+            <option value="">— selecciona —</option>
+          </select>
+        </div>
+      </div>
+      <div style="position:relative; height:360px; max-width:560px; margin:0 auto;">
+        <canvas id="radar-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- SCATTER PLOT -->
+    <div class="chart-section">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Correlación entre variables</div>
+          <div class="chart-sub">Un punto por evaluación · selecciona las variables a comparar</div>
+        </div>
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <label style="font-size:12px; color:#888; font-weight:500; text-transform:uppercase;">Eje X</label>
+            <select id="scatter-x" onchange="renderScatterChart()" style="min-width:130px;">
+              <option value="ideation">Ideación</option>
+              <option value="stress" selected>Estrés</option>
+              <option value="mood">Ánimo</option>
+              <option value="sleep">Sueño</option>
+              <option value="entrapment">Entrapment</option>
+              <option value="burden">Burden</option>
+              <option value="belonging">Belonging</option>
+              <option value="control">Control</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <label style="font-size:12px; color:#888; font-weight:500; text-transform:uppercase;">Eje Y</label>
+            <select id="scatter-y" onchange="renderScatterChart()" style="min-width:130px;">
+              <option value="ideation" selected>Ideación</option>
+              <option value="stress">Estrés</option>
+              <option value="mood">Ánimo</option>
+              <option value="sleep">Sueño</option>
+              <option value="entrapment">Entrapment</option>
+              <option value="burden">Burden</option>
+              <option value="belonging">Belonging</option>
+              <option value="control">Control</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div style="position:relative; height:320px;">
+        <canvas id="scatter-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- FILA INFERIOR -->
+    <div class="bottom-grid">
+
+      <!-- HEATMAP -->
+      <div class="chart-section" style="margin-bottom:0">
+        <div class="chart-title">Cumplimiento por slot y día</div>
+        <div class="chart-sub" style="margin-bottom:4px">Evaluaciones scheduled · últimos 14 días activos</div>
+        <div class="heatmap-wrap" id="heatmap-wrap">
+          <div class="loading">Cargando...</div>
+        </div>
+        <div class="heatmap-legend">
+          <div class="legend-item"><div class="legend-sq" style="background:#c8e6c9"></div>Completado</div>
+          <div class="legend-item"><div class="legend-sq" style="background:#ffcdd2"></div>No completado</div>
+          <div class="legend-item"><div class="legend-sq" style="background:#f0f0f0"></div>Sin actividad</div>
+        </div>
+      </div>
+
+      <!-- ALERTAS -->
+      <div class="chart-section" style="margin-bottom:0">
+        <div class="chart-title">Alertas por paciente</div>
+        <div class="chart-sub" style="margin-bottom:12px">Basado en ideación media e ideación máxima</div>
+        <table class="patients-table">
+          <thead>
+            <tr>
+              <th>Paciente</th>
+              <th>Id. media</th>
+              <th>Id. máx</th>
+              <th>Nivel</th>
+            </tr>
+          </thead>
+          <tbody id="alerts-table">
+            <tr><td colspan="4" class="loading">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TABLA DE FLAGS -->
+    <div class="chart-section" style="margin-top:20px;">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Flags clínicos por día y paciente</div>
+          <div class="chart-sub">
+            Ideación alta (&gt;5) · Escalada (≥2 pts) · Persistencia (&gt;2 slots seguidos) · Estrés persistente (&gt;6, &gt;2 slots) · Sin control con ideación elevada
+          </div>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+          <thead id="flags-thead"></thead>
+          <tbody id="flags-tbody">
+            <tr><td colspan="4" class="loading">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; padding-top:12px; border-top:1px solid #f0f0f0;">
+        <span class="flag-badge flag-id-alta">🔴 Id. alta</span><span style="font-size:11px; color:#888; align-self:center;">Ideación &gt;5 en el slot</span>
+        <span style="color:#ddd; align-self:center;">|</span>
+        <span class="flag-badge flag-escalada">⚠️ Escalada</span><span style="font-size:11px; color:#888; align-self:center;">Subida ≥2 pts respecto al slot anterior</span>
+        <span style="color:#ddd; align-self:center;">|</span>
+        <span class="flag-badge flag-id-persist">🔺 Id. persistente</span><span style="font-size:11px; color:#888; align-self:center;">Ideación &gt;5 en &gt;2 slots consecutivos</span>
+        <span style="color:#ddd; align-self:center;">|</span>
+        <span class="flag-badge flag-stress-persist">💙 Estrés pers.</span><span style="font-size:11px; color:#888; align-self:center;">Estrés &gt;6 en &gt;2 slots consecutivos</span>
+        <span style="color:#ddd; align-self:center;">|</span>
+        <span class="flag-badge flag-sin-control">🟣 Sin control</span><span style="font-size:11px; color:#888; align-self:center;">Ideación &gt;5 sin respuesta de control</span>
+      </div>
+    </div>
+
+    <!-- TABLA DETALLADA -->
+    <div class="chart-section" style="margin-top:20px;">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Registros detallados</div>
+          <div class="chart-sub">Todos los registros del paciente seleccionado · ordenados por fecha</div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <label style="font-size:12px; color:#888;">Mostrar:</label>
+          <select id="detail-view" onchange="renderDetailTable(getFilteredRows())" style="min-width:120px; font-size:13px; padding:6px 10px;">
+            <option value="scores">Puntuaciones</option>
+            <option value="ia">Análisis IA</option>
+          </select>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table id="detail-table" style="width:100%; border-collapse:collapse; font-size:13px;">
+          <thead id="detail-thead"></thead>
+          <tbody id="detail-tbody">
+            <tr><td colspan="10" class="loading">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="detail-pagination" style="display:flex; justify-content:center; gap:8px; margin-top:16px; font-size:13px;"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+const SHEET_ID       = '1u2TZAhikb5tS_ijVdRrYkxjl2_LWrwtAkm05o8RXCxM';
+const SHEET_NAME     = 'Hoja 1';
+const SHEET_PATIENTS = 'Pacientes';
+const CLIENT_ID      = '889272379169-3ocehqb1urug88gkr3qp02jg2aqkla33.apps.googleusercontent.com';
+const SCOPES         = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+
+const COLORS = {
+  ideation:   '#e53935',
+  stress:     '#1976d2',
+  mood:       '#388e3c',
+  sleep:      '#f57c00',
+  entrapment: '#7b1fa2',
+  burden:     '#00838f',
+  belonging:  '#c2185b',
+  control:    '#5d4037',
+};
+
+const SLOTS = ['morning', 'afternoon', 'night'];
+const SLOT_LABELS = { morning: 'Mañana', afternoon: 'Tarde', night: 'Noche' };
+const SLOT_ORDER  = { morning: 0, afternoon: 1, night: 2 };
+
+let accessToken = null;
+let tokenClient = null;
+let allRows     = [];
+let patientMeta = {};
+let mainChart   = null;
+let activeVars  = new Set(['ideation', 'stress']);
+
+// ─── UTILIDADES DE FECHA (hora LOCAL) ───────────────────
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function yesterdayStr() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function normalizeDate(raw) {
+  if (!raw) return null;
+  raw = raw.trim();
+  const dmyMatch = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dmyMatch) {
+    const [, d, m, y] = dmyMatch;
+    return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  return null;
+}
+
+function daysBetween(from, to) {
+  const a = new Date(from + 'T00:00:00');
+  const b = new Date(to   + 'T00:00:00');
+  return Math.round((b - a) / 86400000) + 1;
+}
+
+function dateRange(from, to) {
+  const result = [];
+  const cur = new Date(from + 'T00:00:00');
+  const end = new Date(to   + 'T00:00:00');
+  while (cur <= end) {
+    result.push(`${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}-${String(cur.getDate()).padStart(2,'0')}`);
+    cur.setDate(cur.getDate() + 1);
+  }
+  return result;
+}
+
+// ─── AUTH ───────────────────────────────────────────────
+function handleCredential(response) {
+  const payload = parseJwt(response.credential);
+  document.getElementById('user-email').textContent = payload.email;
+  initTokenClient();
+}
+
+function parseJwt(token) {
+  const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+  return JSON.parse(atob(base64));
+}
+
+function initTokenClient() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (tokenResponse) => {
+      if (tokenResponse.error) { showError('Error al obtener acceso: ' + tokenResponse.error); return; }
+      accessToken = tokenResponse.access_token;
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      loadData();
+    },
+  });
+  tokenClient.requestAccessToken({ prompt: '' });
+}
+
+function logout() {
+  accessToken = null; tokenClient = null; allRows = []; patientMeta = {};
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  if (mainChart) { mainChart.destroy(); mainChart = null; }
+}
+
+// ─── CARGA DE DATOS ─────────────────────────────────────
+async function fetchSheet(sheetName) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(sheetName)}`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (res.status === 401 || res.status === 403) { showReconnectBanner(); return null; }
+  if (!res.ok) throw new Error(`HTTP ${res.status} en hoja "${sheetName}"`);
+  const data = await res.json();
+  const [headers, ...rows] = data.values || [];
+  if (!headers) return [];
+  return rows.map(r => {
+    const obj = {};
+    headers.forEach((h, i) => obj[h.trim()] = (r[i] ?? '').trim());
+    return obj;
+  });
+}
+
+async function loadData() {
+  if (!accessToken) return;
+  showInfo('Cargando datos...');
+  document.querySelector('.btn-load').disabled = true;
+
+  try {
+    const [rows1, rowsPacientes] = await Promise.all([
+      fetchSheet(SHEET_NAME),
+      fetchSheet(SHEET_PATIENTS),
+    ]);
+
+    if (rows1 === null) return;
+
+    allRows = (rows1 || []).filter(r => r.dayKey).map(r => {
+      if (r.dayKey && r.dayKey.startsWith("'")) r.dayKey = r.dayKey.substring(1);
+      if (r.dayKey && /^\d{4}-\d{1,2}-\d{1,2}$/.test(r.dayKey.trim())) {
+        const parts = r.dayKey.trim().split('-');
+        r.dayKey = `${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
+      }
+      return r;
+    });
+
+    patientMeta = {};
+    (rowsPacientes || []).forEach(p => {
+      const email = (p.email || p.Email || '').trim();
+      if (!email) return;
+      const rawInicio = p['fecha_registro'] || p['fecha de registro'] || p['Fecha de registro'] || p['fechaRegistro'] || '';
+      const fechaInicio = rawInicio
+        ? (rawInicio.substring(0,10).match(/^\d{4}-\d{2}-\d{2}$/) ? rawInicio.substring(0,10) : normalizeDate(rawInicio))
+        : null;
+      const fechaFin = normalizeDate(p['fecha fin'] || p['Fecha fin'] || p['FechaFin'] || '');
+      patientMeta[email] = { firstDay: fechaInicio, lastDay: fechaFin };
+    });
+
+    allRows.forEach(r => {
+      const pid = r.email || r.userRef || '';
+      if (!pid) return;
+      const day = r.dayKey ? r.dayKey.substring(0, 10) : null;
+      if (!day) return;
+      if (!patientMeta[pid]) patientMeta[pid] = { firstDay: null, lastDay: null };
+      if (!patientMeta[pid].firstDay || day < patientMeta[pid].firstDay) {
+        patientMeta[pid].firstDay = day;
+      }
+    });
+
+    populatePatients();
+    // FIX: siempre actualizar "Hasta" al último día disponible al recargar
+    setDefaultDates();
+    hideMessages();
+    renderAll();
+  } catch (e) {
+    showError('Error al leer datos: ' + e.message);
+  } finally {
+    document.querySelector('.btn-load').disabled = false;
+  }
+}
+
+function populatePatients() {
+  const sel = document.getElementById('sel-patient');
+  const current = sel.value;
+  const emails = [...new Set(allRows.map(r => r.email || r.userRef).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="all">Todos los pacientes</option>';
+  emails.forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e; opt.textContent = e;
+    sel.appendChild(opt);
+  });
+  if (emails.includes(current)) sel.value = current;
+}
+
+function setDefaultDates() {
+  // FIX: "Desde" solo se inicializa una vez; "Hasta" se actualiza SIEMPRE al recargar
+  // para asegurarse de que incluye los datos más recientes.
+  const hoy  = todayStr();
+  const days = allRows.map(r => r.dayKey).filter(Boolean).sort();
+  if (!days.length) return;
+
+  const from = document.getElementById('date-from');
+  const to   = document.getElementById('date-to');
+
+  // "Desde": solo poner si está vacío (no pisamos el filtro manual del usuario)
+  if (!from.value) from.value = days[0].substring(0, 10);
+
+  // "Hasta": siempre poner el máximo entre el último dayKey y hoy,
+  // para garantizar que los datos del día actual están incluidos.
+  const lastDataDay = days[days.length - 1].substring(0, 10);
+  const newTo = lastDataDay > hoy ? lastDataDay : hoy;
+  to.value = newTo;
+}
+
+function getFilteredRows() {
+  const patient = document.getElementById('sel-patient').value;
+  const slot    = document.getElementById('sel-slot').value;
+  const from    = document.getElementById('date-from').value;
+  const to      = document.getElementById('date-to').value;
+
+  return allRows.filter(r => {
+    const id = r.email || r.userRef || '';
+    if (patient !== 'all' && id !== patient) return false;
+    if (slot !== 'all' && r.slot !== slot) return false;
+    const day = r.dayKey ? r.dayKey.substring(0, 10) : '';
+    if (from && day < from) return false;
+    if (to   && day > to)   return false;
+    return true;
+  });
+}
+
+function onFilterChange() { renderAll(); }
+
+// ─── RENDER PRINCIPAL ───────────────────────────────────
+function renderAll() {
+  const rows = getFilteredRows();
+  renderScorecards(rows);
+  renderMainChart(rows);
+  renderScatterChart();
+  populateRadarDays(rows);
+  renderRadarChart();
+  renderHeatmap(rows);
+  renderFlagsTable(rows);
+  renderAlerts();
+  renderDetailTable(rows);
+}
+
+function avg(arr) {
+  const nums = arr.filter(v => v !== '' && v !== null && v !== undefined).map(Number).filter(n => !isNaN(n));
+  return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
+}
+
+// ─── SCORECARDS ─────────────────────────────────────────
+function renderScorecards(rows) {
+  ['ideation','stress','mood','sleep'].forEach(f => {
+    const a = avg(rows.map(r => r[f]));
+    document.getElementById('sc-' + f).textContent = a !== null ? a.toFixed(1) : '—';
+  });
+
+  document.getElementById('sc-records').textContent = rows.length;
+
+  const ayer = yesterdayStr();
+  const selectedPatient = document.getElementById('sel-patient').value;
+
+  const pids = selectedPatient !== 'all'
+    ? [selectedPatient]
+    : [...new Set(allRows.map(r => r.email || r.userRef).filter(Boolean))];
+
+  const completedByPid = {};
+  allRows.filter(r => r.entryType === 'scheduled').forEach(r => {
+    const pid = r.email || r.userRef || '';
+    const day = r.dayKey ? r.dayKey.substring(0, 10) : null;
+    if (!pid || !day || !r.slot) return;
+    if (!completedByPid[pid]) completedByPid[pid] = new Set();
+    completedByPid[pid].add(day + '_' + r.slot);
+  });
+
+  const adherences = pids.map(pid => {
+    const meta = patientMeta[pid] || {};
+    const firstDay = meta.firstDay || null;
+    if (!firstDay) return null;
+
+    let lastActive = ayer;
+    if (meta.lastDay && meta.lastDay < ayer) lastActive = meta.lastDay;
+    if (lastActive < firstDay) return null;
+
+    const totalDays     = daysBetween(firstDay, lastActive);
+    const totalExpected = totalDays * 3;
+
+    const completed = completedByPid[pid]
+      ? [...completedByPid[pid]].filter(k => {
+          const day = k.substring(0, 10);
+          return day >= firstDay && day <= lastActive;
+        }).length
+      : 0;
+
+    return totalExpected > 0 ? completed / totalExpected : null;
+  }).filter(v => v !== null);
+
+  const meanAdh = adherences.length
+    ? adherences.reduce((a, b) => a + b, 0) / adherences.length
+    : null;
+
+  document.getElementById('sc-adherence').textContent =
+    meanAdh !== null ? Math.round(meanAdh * 100) + '%' : '—';
+
+  const idAvg = avg(rows.map(r => r.ideation));
+  document.querySelector('#scorecards .scorecard').classList.toggle('alert', idAvg !== null && idAvg > 5);
+}
+
+// ─── GRÁFICO PRINCIPAL ──────────────────────────────────
+function renderMainChart(rows) {
+  const byDay = {};
+  rows.forEach(r => {
+    const day = r.dayKey ? r.dayKey.substring(0, 10) : 'sin fecha';
+    if (!byDay[day]) byDay[day] = {};
+    Object.keys(COLORS).forEach(v => {
+      if (!byDay[day][v]) byDay[day][v] = [];
+      if (r[v] !== '' && r[v] !== undefined) byDay[day][v].push(Number(r[v]));
+    });
+  });
+
+  const labels   = Object.keys(byDay).sort();
+  const datasets = [];
+
+  activeVars.forEach(v => {
+    datasets.push({
+      label: v.charAt(0).toUpperCase() + v.slice(1),
+      data: labels.map(d => {
+        const vals = byDay[d][v] || [];
+        return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+      }),
+      borderColor: COLORS[v],
+      backgroundColor: COLORS[v] + '22',
+      tension: 0.3, pointRadius: 4, pointHoverRadius: 6,
+      spanGaps: true, borderWidth: 2,
+    });
+  });
+
+  if (mainChart) mainChart.destroy();
+  const ctx = document.getElementById('main-chart').getContext('2d');
+  mainChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 12 } } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y !== null ? ctx.parsed.y.toFixed(2) : 'N/D'}` } }
+      },
+      scales: {
+        x: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } } },
+        y: { min: 0, max: 10, grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+// ─── HEATMAP ────────────────────────────────────────────
+function renderHeatmap(rows) {
+  const wrap = document.getElementById('heatmap-wrap');
+  const hoy  = todayStr();
+  const selectedPatient = document.getElementById('sel-patient').value;
+
+  // completedSet se construye desde allRows (no desde rows filtradas por fecha)
+  // para que el heatmap siempre muestre los últimos 14 días reales independientemente del filtro
+  const completedSet = new Set();
+  allRows.filter(r => r.entryType === 'scheduled').forEach(r => {
+    const pid = r.email || r.userRef || '';
+    if (selectedPatient !== 'all' && pid !== selectedPatient) return;
+    const day = r.dayKey ? r.dayKey.substring(0, 10) : null;
+    if (day && r.slot) completedSet.add(day + '_' + r.slot);
+  });
+
+  let daysToShow = [];
+
+  if (selectedPatient !== 'all') {
+    const meta = patientMeta[selectedPatient] || {};
+    const firstDay = meta.firstDay || null;
+    if (!firstDay) { wrap.innerHTML = '<div class="loading">Sin datos para este paciente</div>'; return; }
+    let lastActive = hoy;
+    if (meta.lastDay && meta.lastDay < hoy) lastActive = meta.lastDay;
+    if (lastActive < firstDay) { wrap.innerHTML = '<div class="loading">Sin días completos aún</div>'; return; }
+    daysToShow = dateRange(firstDay, lastActive).slice(-14);
+  } else {
+    // Usar allRows para el rango de días del heatmap, no las filas filtradas
+    const daySet = new Set(allRows.map(r => r.dayKey ? r.dayKey.substring(0,10) : null).filter(Boolean));
+    // Incluir también hoy aunque no tenga datos aún
+    daySet.add(hoy);
+    daysToShow = [...daySet].sort().filter(d => d <= hoy).slice(-14);
+    if (!daysToShow.length) { wrap.innerHTML = '<div class="loading">Sin datos</div>'; return; }
+  }
+
+  let html = '<table class="heatmap-table"><thead><tr>';
+  html += '<th class="day-col">Día</th>';
+  SLOTS.forEach(s => { html += `<th>${SLOT_LABELS[s]}</th>`; });
+  html += '</tr></thead><tbody>';
+
+  daysToShow.forEach(day => {
+    html += `<tr><td class="heatmap-day">${day.slice(5)}</td>`;
+    SLOTS.forEach(slot => {
+      const key     = day + '_' + slot;
+      const isDone  = completedSet.has(key);
+      const isPast  = day < hoy;
+      const isToday = day === hoy;
+
+      let cls, label;
+      if (isDone) {
+        cls = 'done'; label = '✓';
+      } else if (isPast) {
+        cls = 'missed'; label = '✗';
+      } else {
+        // hoy: slots aún no completados = pendiente
+        cls = 'future'; label = '·';
+      }
+
+      if (selectedPatient !== 'all') {
+        const meta       = patientMeta[selectedPatient] || {};
+        const firstDay   = meta.firstDay || day;
+        const lastActive = meta.lastDay && meta.lastDay < hoy ? meta.lastDay : hoy;
+        if (day < firstDay || day > lastActive) { cls = 'inactive'; label = '—'; }
+      }
+
+      html += `<td class="heatmap-cell ${cls}" title="${day} · ${SLOT_LABELS[slot]}">${label}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+// ─── ALERTAS ────────────────────────────────────────────
+function renderAlerts() {
+  const byPatient = {};
+  allRows.forEach(r => {
+    const id = r.email || r.userRef || 'desconocido';
+    if (!byPatient[id]) byPatient[id] = [];
+    if (r.ideation !== '' && r.ideation !== undefined) byPatient[id].push(Number(r.ideation));
+  });
+
+  const tbody = document.getElementById('alerts-table');
+  tbody.innerHTML = '';
+
+  Object.entries(byPatient)
+    .sort((a, b) => {
+      const aAvg = a[1].length ? a[1].reduce((x,y)=>x+y,0)/a[1].length : 0;
+      const bAvg = b[1].length ? b[1].reduce((x,y)=>x+y,0)/b[1].length : 0;
+      return bAvg - aAvg;
+    })
+    .forEach(([patient, vals]) => {
+      const mean = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+      const max  = vals.length ? Math.max(...vals) : 0;
+      let level, cls;
+      if (mean > 5 || max >= 8)      { level = 'ALTO';     cls = 'alto'; }
+      else if (mean > 3 || max >= 5) { level = 'MODERADO'; cls = 'moderado'; }
+      else                           { level = 'BAJO';     cls = 'bajo'; }
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-size:12px; color:#555; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${patient}">${patient}</td>
+        <td style="font-size:13px; font-weight:500;">${mean.toFixed(1)}</td>
+        <td style="font-size:13px;">${max.toFixed(1)}</td>
+        <td><span class="badge ${cls}">${level}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  if (!Object.keys(byPatient).length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="loading">Sin datos</td></tr>';
+  }
+}
+
+// ─── CÁLCULO DE FLAGS CLÍNICOS ──────────────────────────
+/*
+  FIX escalada: la comparación de slots es estrictamente por paciente y en orden
+  cronológico. El primer slot de cada paciente nunca genera flag de escalada
+  (no tiene anterior con quien comparar).
+
+  Persistencia: se calcula sobre la secuencia cronológica de slots scheduled,
+  sin importar si hay slots missing en medio (se reinicia el contador solo cuando
+  el valor cae por debajo del umbral).
+*/
+function computeFlags(rows) {
+  const patients = [...new Set(rows.map(r => r.email || r.userRef).filter(Boolean))];
+  const flagMap  = {};
+
+  patients.forEach(pid => {
+    flagMap[pid] = {};
+
+    // Secuencia cronológica de slots scheduled de este paciente
+    const pidRows = rows
+      .filter(r => (r.email || r.userRef) === pid && r.entryType === 'scheduled' && r.dayKey && r.slot)
+      .sort((a, b) => {
+        const dayDiff = a.dayKey.localeCompare(b.dayKey);
+        if (dayDiff !== 0) return dayDiff;
+        return (SLOT_ORDER[a.slot] ?? 3) - (SLOT_ORDER[b.slot] ?? 3);
+      });
+
+    const addFlag = (day, type) => {
+      if (!flagMap[pid][day]) flagMap[pid][day] = new Set();
+      flagMap[pid][day].add(type);
+    };
+
+    // ── Ideación alta · Sin control · Escalada ────────
+    pidRows.forEach((r, idx) => {
+      const day       = r.dayKey.substring(0, 10);
+      const idVal     = r.ideation !== '' && r.ideation !== undefined ? parseFloat(r.ideation) : null;
+      const controlVal = r.control;
+
+      if (idVal !== null && idVal > 5) {
+        addFlag(day, 'id_alta:' + idVal.toFixed(1));
+
+        // Sin control: ideación >5 y control vacío
+        const controlMissing = controlVal === '' || controlVal === undefined || controlVal === null || controlVal === '—';
+        if (controlMissing) addFlag(day, 'sin_control');
+      }
+
+      // FIX escalada: solo comparar con el slot anterior DEL MISMO PACIENTE
+      // y solo si idx > 0 (el primer slot nunca genera escalada)
+      if (idx > 0 && idVal !== null) {
+        const prevRow = pidRows[idx - 1];
+        const prevId  = prevRow.ideation !== '' && prevRow.ideation !== undefined ? parseFloat(prevRow.ideation) : null;
+        if (prevId !== null && (idVal - prevId) >= 2) {
+          addFlag(day, 'escalada');
+        }
+      }
+    });
+
+    // ── Ideación persistente (>2 slots consecutivos con ideación >5) ──
+    let idStreak = 0;
+    pidRows.forEach(r => {
+      const day   = r.dayKey.substring(0, 10);
+      const idVal = r.ideation !== '' && r.ideation !== undefined ? parseFloat(r.ideation) : null;
+      if (idVal !== null && idVal > 5) {
+        idStreak++;
+        if (idStreak > 2) addFlag(day, 'id_persistente');
+      } else {
+        idStreak = 0;
+      }
+    });
+
+    // ── Estrés persistente (>2 slots consecutivos con estrés >6) ──
+    let stressStreak = 0;
+    pidRows.forEach(r => {
+      const day       = r.dayKey.substring(0, 10);
+      const stressVal = r.stress !== '' && r.stress !== undefined ? parseFloat(r.stress) : null;
+      if (stressVal !== null && stressVal > 6) {
+        stressStreak++;
+        if (stressStreak > 2) addFlag(day, 'stress_persistente');
+      } else {
+        stressStreak = 0;
+      }
+    });
+  });
+
+  return flagMap;
+}
+
+// ─── TABLA DE FLAGS ─────────────────────────────────────
+function renderFlagsTable(rows) {
+  const thead = document.getElementById('flags-thead');
+  const tbody = document.getElementById('flags-tbody');
+
+  const patients = [...new Set(rows.map(r => r.email || r.userRef).filter(Boolean))].sort();
+  const days     = [...new Set(rows.map(r => r.dayKey ? r.dayKey.substring(0,10) : null).filter(Boolean))].sort();
+
+  if (!patients.length || !days.length) {
+    thead.innerHTML = '';
+    tbody.innerHTML = '<tr><td colspan="4" class="loading">Sin datos</td></tr>';
+    return;
+  }
+
+  const flagMap = computeFlags(rows);
+
+  thead.innerHTML = `<tr>
+    <th class="detail-th" style="min-width:90px;">Día</th>
+    ${patients.map(p => `<th class="detail-th" style="max-width:180px; overflow:hidden; text-overflow:ellipsis;" title="${p}">${p.split('@')[0]}</th>`).join('')}
+  </tr>`;
+
+  const flagDays = days.filter(day =>
+    patients.some(pid => flagMap[pid] && flagMap[pid][day] && flagMap[pid][day].size > 0)
+  );
+
+  if (!flagDays.length) {
+    tbody.innerHTML = `<tr><td colspan="${patients.length+1}" class="loading" style="color:#2e7d32;">✓ Sin flags activos en el periodo seleccionado</td></tr>`;
+    return;
+  }
+
+  const renderFlagSet = (flagSet) => {
+    if (!flagSet || flagSet.size === 0) return `<td class="detail-td" style="text-align:center; color:#ccc;">—</td>`;
+    const badges = [];
+
+    const idAltas = [...flagSet].filter(f => f.startsWith('id_alta:'));
+    if (idAltas.length > 0) {
+      const maxVal = Math.max(...idAltas.map(f => parseFloat(f.split(':')[1])));
+      badges.push(`<span class="flag-badge flag-id-alta">🔴 Id. alta (${maxVal.toFixed(1)})</span>`);
+    }
+    if (flagSet.has('escalada'))            badges.push(`<span class="flag-badge flag-escalada">⚠️ Escalada</span>`);
+    if (flagSet.has('id_persistente'))      badges.push(`<span class="flag-badge flag-id-persist">🔺 Id. persistente</span>`);
+    if (flagSet.has('stress_persistente'))  badges.push(`<span class="flag-badge flag-stress-persist">💙 Estrés pers.</span>`);
+    if (flagSet.has('sin_control'))         badges.push(`<span class="flag-badge flag-sin-control">🟣 Sin control</span>`);
+
+    if (!badges.length) return `<td class="detail-td" style="text-align:center; color:#ccc;">—</td>`;
+    return `<td class="detail-td">${badges.join('')}</td>`;
+  };
+
+  tbody.innerHTML = flagDays.map(day => {
+    const cells = patients.map(pid => renderFlagSet(flagMap[pid] ? flagMap[pid][day] : null)).join('');
+    return `<tr class="detail-tr"><td class="detail-td" style="white-space:nowrap; color:#555; font-weight:500;">${day}</td>${cells}</tr>`;
+  }).join('');
+}
+
+// ─── SCATTER CHART ──────────────────────────────────────
+let scatterChart = null;
+
+const VAR_LABELS = {
+  ideation: 'Ideación', stress: 'Estrés', mood: 'Ánimo', sleep: 'Sueño',
+  entrapment: 'Entrapment', burden: 'Burden', belonging: 'Belonging', control: 'Control'
+};
+
+function renderScatterChart() {
+  const xVar = document.getElementById('scatter-x').value;
+  const yVar = document.getElementById('scatter-y').value;
+
+  if (scatterChart) { scatterChart.destroy(); scatterChart = null; }
+
+  const rows = getFilteredRows().filter(r => {
+    const x = r[xVar]; const y = r[yVar];
+    return x !== '' && x !== undefined && y !== '' && y !== undefined &&
+           !isNaN(parseFloat(x)) && !isNaN(parseFloat(y));
+  });
+
+  const slotData = { morning: [], afternoon: [], night: [], extra: [] };
+  rows.forEach(r => {
+    const slot = r.slot || 'extra';
+    const key  = slotData[slot] ? slot : 'extra';
+    slotData[key].push({
+      x: parseFloat(r[xVar]),
+      y: parseFloat(r[yVar]),
+      label: `${r.dayKey || ''} · ${r.slot || ''} · ${r.email || r.userRef || ''}`
+    });
+  });
+
+  const datasets = [
+    { label: 'Mañana',   data: slotData.morning,   backgroundColor: 'rgba(245,124,0,0.7)',  pointRadius: 5 },
+    { label: 'Tarde',    data: slotData.afternoon, backgroundColor: 'rgba(25,118,210,0.7)', pointRadius: 5 },
+    { label: 'Noche',    data: slotData.night,     backgroundColor: 'rgba(106,27,154,0.7)', pointRadius: 5 },
+    { label: 'Extra',    data: slotData.extra,     backgroundColor: 'rgba(46,125,50,0.7)',  pointRadius: 5 },
+  ].filter(d => d.data.length > 0);
+
+  const ctx = document.getElementById('scatter-chart').getContext('2d');
+  scatterChart = new Chart(ctx, {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 12 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const p = ctx.raw;
+              return `${p.label || ''} → ${VAR_LABELS[xVar]}: ${p.x}, ${VAR_LABELS[yVar]}: ${p.y}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: 0, max: 10,
+          title: { display: true, text: VAR_LABELS[xVar], font: { size: 12 }, color: '#666' },
+          grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } }
+        },
+        y: {
+          min: 0, max: 10,
+          title: { display: true, text: VAR_LABELS[yVar], font: { size: 12 }, color: '#666' },
+          grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+// ─── RADAR CHART ────────────────────────────────────────
+const RADAR_VARS   = ['ideation','stress','mood','sleep','entrapment','burden','belonging','control'];
+const RADAR_LABELS = ['Ideación','Estrés','Ánimo','Sueño','Entrapment','Burden','Belonging','Control'];
+const SLOT_COLORS  = {
+  morning:   { border: '#f57c00', bg: 'rgba(245,124,0,0.15)' },
+  afternoon: { border: '#1976d2', bg: 'rgba(25,118,210,0.15)' },
+  night:     { border: '#6a1b9a', bg: 'rgba(106,27,154,0.15)' },
+};
+let radarChart = null;
+
+function populateRadarDays(rows) {
+  const sel     = document.getElementById('radar-day-select');
+  const current = sel.value;
+  const days    = [...new Set(rows.map(r => r.dayKey ? r.dayKey.substring(0,10) : null).filter(Boolean))].sort().reverse();
+  sel.innerHTML = '<option value="">— selecciona —</option>';
+  days.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d; opt.textContent = d;
+    sel.appendChild(opt);
+  });
+  if (days.length) sel.value = days.includes(current) ? current : days[0];
+}
+
+function renderRadarChart() {
+  const day    = document.getElementById('radar-day-select').value;
+  const canvas = document.getElementById('radar-chart');
+
+  if (radarChart) { radarChart.destroy(); radarChart = null; }
+  if (!day) return;
+
+  const rows = getFilteredRows().filter(r =>
+    r.dayKey && r.dayKey.substring(0,10) === day && r.entryType === 'scheduled'
+  );
+
+  const bySlot = {};
+  rows.forEach(r => {
+    if (!r.slot) return;
+    if (!bySlot[r.slot]) bySlot[r.slot] = { counts: {}, sums: {} };
+    RADAR_VARS.forEach(v => {
+      const n = r[v] !== '' && r[v] !== undefined ? parseFloat(r[v]) : null;
+      if (n !== null && !isNaN(n)) {
+        bySlot[r.slot].sums[v]   = (bySlot[r.slot].sums[v]   || 0) + n;
+        bySlot[r.slot].counts[v] = (bySlot[r.slot].counts[v] || 0) + 1;
+      }
+    });
+  });
+
+  if (!Object.keys(bySlot).length) {
+    canvas.parentElement.innerHTML = '<div class="loading">Sin datos scheduled para este día</div>';
+    return;
+  }
+
+  const datasets = SLOTS.filter(s => bySlot[s]).map(slot => ({
+    label: SLOT_LABELS[slot],
+    data: RADAR_VARS.map(v => {
+      const s = bySlot[slot].sums[v];
+      const c = bySlot[slot].counts[v];
+      return (s !== undefined && c) ? s / c : null;
+    }),
+    borderColor:      SLOT_COLORS[slot].border,
+    backgroundColor:  SLOT_COLORS[slot].bg,
+    borderWidth:      2,
+    pointBackgroundColor: SLOT_COLORS[slot].border,
+    pointRadius:      4,
+    spanGaps:         true,
+  }));
+
+  radarChart = new Chart(canvas, {
+    type: 'radar',
+    data: { labels: RADAR_LABELS, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        r: {
+          min: 0, max: 10,
+          ticks: { stepSize: 2, font: { size: 10 }, color: '#aaa', backdropColor: 'transparent' },
+          grid: { color: '#e8e8e8' },
+          angleLines: { color: '#e8e8e8' },
+          pointLabels: { font: { size: 12 }, color: '#555' },
+        }
+      },
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 12 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.r !== null ? ctx.parsed.r.toFixed(1) : 'N/D'}`
+          }
+        }
+      }
+    }
+  });
+}
+
+// ─── TOGGLE VARIABLES ───────────────────────────────────
+function toggleVar(btn) {
+  const v = btn.dataset.var;
+  if (activeVars.has(v)) {
+    if (activeVars.size === 1) return;
+    activeVars.delete(v);
+    btn.classList.remove('active');
+  } else {
+    activeVars.add(v);
+    btn.classList.add('active');
+  }
+  renderMainChart(getFilteredRows());
+}
+
+// ─── TABLA DETALLADA ────────────────────────────────────
+let detailPage = 0;
+const DETAIL_PAGE_SIZE = 15;
+let detailRows = [];
+
+function renderDetailTable(rows) {
+  detailRows = [...rows].sort((a, b) => {
+    const da = a.dayKey || ''; const db = b.dayKey || '';
+    if (da !== db) return db.localeCompare(da);
+    const slotOrder = { morning: 0, afternoon: 1, night: 2 };
+    return (slotOrder[a.slot] ?? 3) - (slotOrder[b.slot] ?? 3);
+  });
+  detailPage = 0;
+  renderDetailPage();
+}
+
+function renderDetailPage() {
+  const view     = document.getElementById('detail-view').value;
+  const thead    = document.getElementById('detail-thead');
+  const tbody    = document.getElementById('detail-tbody');
+  const start    = detailPage * DETAIL_PAGE_SIZE;
+  const pageRows = detailRows.slice(start, start + DETAIL_PAGE_SIZE);
+
+  if (view === 'scores') {
+    thead.innerHTML = `<tr>
+      <th class="detail-th">Fecha</th><th class="detail-th">Slot</th><th class="detail-th">Tipo</th>
+      <th class="detail-th">Ideación</th><th class="detail-th">Estrés</th><th class="detail-th">Ánimo</th>
+      <th class="detail-th">Sueño</th><th class="detail-th">Entrapment</th>
+      <th class="detail-th">Burden</th><th class="detail-th">Belonging</th><th class="detail-th">Control</th>
+    </tr>`;
+    tbody.innerHTML = pageRows.map(r => {
+      const slotCls = 'slot-' + (r.slot || 'extra');
+      return `<tr class="detail-tr">
+        <td class="detail-td" style="white-space:nowrap; color:#555;">${r.dayKey || '—'}</td>
+        <td class="detail-td"><span class="slot-badge ${slotCls}">${r.slot || '—'}</span></td>
+        <td class="detail-td" style="color:#999; font-size:11px;">${r.entryType || '—'}</td>
+        ${['ideation','stress','mood','sleep','entrapment','burden','belonging','control'].map(f => {
+          const v = r[f];
+          const n = v !== '' && v !== undefined ? parseFloat(v) : null;
+          let cls = '';
+          if (n !== null) {
+            if (f === 'ideation' && n >= 5) cls = 'num-high';
+            else if (f === 'ideation' && n >= 3) cls = 'num-mid';
+            else if ((f === 'mood' || f === 'belonging') && n >= 7) cls = 'num-ok';
+            else if ((f === 'mood' || f === 'belonging') && n <= 3) cls = 'num-high';
+          }
+          return `<td class="detail-td"><span class="num-cell ${cls}">${n !== null ? n : '—'}</span></td>`;
+        }).join('')}
+      </tr>`;
+    }).join('') || '<tr><td colspan="11" class="loading">Sin registros</td></tr>';
+  } else {
+    thead.innerHTML = `<tr>
+      <th class="detail-th">Fecha</th><th class="detail-th">Slot</th>
+      <th class="detail-th">Tono</th><th class="detail-th">Temas</th>
+      <th class="detail-th">Lenguaje riesgo</th><th class="detail-th">Lenguaje protector</th>
+      <th class="detail-th">Coherencia</th>
+    </tr>`;
+    tbody.innerHTML = pageRows.map(r => `<tr class="detail-tr">
+      <td class="detail-td" style="white-space:nowrap; color:#555;">${r.dayKey || '—'}</td>
+      <td class="detail-td"><span class="slot-badge slot-${r.slot || 'extra'}">${r.slot || '—'}</span></td>
+      <td class="detail-td" style="color:#555;">${r.ia_tone || '—'}</td>
+      <td class="detail-td" style="max-width:200px; color:#555;">${r.ia_themes || '—'}</td>
+      <td class="detail-td" style="max-width:180px; color:${r.ia_risk_language && r.ia_risk_language !== '—' ? '#c62828' : '#aaa'};">${r.ia_risk_language || '—'}</td>
+      <td class="detail-td" style="max-width:180px; color:${r.ia_protective_language && r.ia_protective_language !== '—' ? '#2e7d32' : '#aaa'};">${r.ia_protective_language || '—'}</td>
+      <td class="detail-td" style="color:#555;">${r.ia_coherence || '—'}</td>
+    </tr>`).join('') || '<tr><td colspan="7" class="loading">Sin registros con análisis IA</td></tr>';
+  }
+
+  const totalPages = Math.ceil(detailRows.length / DETAIL_PAGE_SIZE);
+  const pag = document.getElementById('detail-pagination');
+  if (totalPages <= 1) { pag.innerHTML = ''; return; }
+  let html = '';
+  for (let i = 0; i < totalPages; i++) {
+    html += `<button class="page-btn ${i === detailPage ? 'active' : ''}" onclick="detailPage=${i}; renderDetailPage();">${i+1}</button>`;
+  }
+  pag.innerHTML = html;
+}
+
+// ─── BANNERS ────────────────────────────────────────────
+function showReconnectBanner() {
+  const el = document.getElementById('error-banner');
+  el.innerHTML = 'Sesión caducada. <button onclick="reconnect()" style="margin-left:8px; padding:4px 12px; background:#c62828; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px;">Reconectar</button>';
+  el.style.display = 'block';
+  document.getElementById('info-banner').style.display = 'none';
+}
+function reconnect() {
+  if (tokenClient) tokenClient.requestAccessToken({ prompt: '' });
+  else { document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app').style.display = 'none'; }
+}
+function showError(msg) {
+  const el = document.getElementById('error-banner');
+  el.textContent = msg; el.style.display = 'block';
+  document.getElementById('info-banner').style.display = 'none';
+}
+function showInfo(msg) {
+  const el = document.getElementById('info-banner');
+  el.textContent = msg; el.style.display = 'block';
+  document.getElementById('error-banner').style.display = 'none';
+}
+function hideMessages() {
+  document.getElementById('error-banner').style.display = 'none';
+  document.getElementById('info-banner').style.display = 'none';
+}
+</script>
+</body>
+</html>
